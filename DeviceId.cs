@@ -1,7 +1,8 @@
 namespace Orbipacket
 {
-    public enum DeviceId
+    public enum DeviceId : byte
     {
-        MissingDevice = 0,
+        Device1 = 0,
+        MaxDeviceId = 31,
     }
 }
