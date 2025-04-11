@@ -4,8 +4,11 @@ namespace Orbipacket
 {
     public class Decode
     {
-        bool isTmPacket;
-        bool isTcPacket;
+        private const int VERSION_OFFSET = 0;
+        private const int LENGTH_OFFSET = 1;
+        private const int CONTROL_OFFSET = 2;
+        private const int TIMESTAMP_OFFSET = 3;
+        private const int PAYLOAD_OFFSET = 11;
 
         /// Decode the packet from a byte array
         public Packet GetPacketInformation(byte[] packetData)
