@@ -8,6 +8,7 @@ namespace Orbipacket
         {
             _payload = payload;
         }
+
         public static byte Length()
         {
             return 16;
