@@ -23,7 +23,7 @@ namespace Orbipacket
             Type = type;
         }
 
-        public static byte Length()
+        public byte Length()
         {
             return Payload.Length();
         }
@@ -33,10 +33,9 @@ namespace Orbipacket
             return 11;
         }
 
-        public static byte Size()
+        public byte Size()
         {
             return (byte)(Overhead() + Length());
         }
-
     }
 }
