@@ -1,4 +1,6 @@
-﻿using Orbipacket;
+﻿using Nito.HashAlgorithms;
+using Orbipacket;
+using Orbipacket.Library;
 
 namespace Orbipacket
 {
@@ -9,72 +11,101 @@ namespace Orbipacket
         private const int CONTROL_OFFSET = 2;
         private const int TIMESTAMP_OFFSET = 3;
         private const int PAYLOAD_OFFSET = 11;
+        public const int CRC_TERMINATION_BYTE_SIZE = 3; // 2 bytes for CRC, 1 0x00 termination byte
+        private static readonly byte _terminationByte = 0x00; // Termination byte
 
-        /// Decode the packet from a byte array
-        public Packet GetPacketInformation(byte[] packetData)
+        /// <summary>
+        /// Handles decoding of packet data into structured Packet objects
+        /// </summary>
+        /// <param name="rawpacketData">The raw packet data (excluding termination byte) to decode.</param>
+        public static Packet GetPacketInformation(byte[] rawpacketData)
         {
-            if (packetData.Length < Packet.Overhead())
+            byte[] packetData = COBS.Decode(rawpacketData).ToArray();
+            Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
+            byte[] crc = Crc16.GetCRC(packetData); // Compute CRC for the packet data
+
+            byte[] crcFromPacket = rawpacketData.Skip(rawpacketData.Length - 2).Take(2).ToArray(); // Extract CRC from the packet data
+            Console.WriteLine("CRC from packet: " + BitConverter.ToString(crcFromPacket));
+            Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
+            if (!crc.SequenceEqual(crcFromPacket))
             {
-                throw new ArgumentException("Packet data is too short.");
+                throw new ArgumentException("CRC mismatch. Packet data may be corrupted.");
             }
 
-            if (packetData[0] != Packet.VERSION)
+            byte controlByte = packetData[CONTROL_OFFSET];
+            Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
+
+            byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 2-6) of control byte
+
+            byte[] timestampBytes = packetData.Skip(TIMESTAMP_OFFSET).Take(8).ToArray();
+
+            ulong timestamp = BitConverter.ToUInt64(timestampBytes, 0);
+
+            int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
+
+            ValidatePacket(packetData, payloadLength); // Pass payloadLength to ValidatePacket
+
+            byte[] payload = packetData.Skip(PAYLOAD_OFFSET).Take(payloadLength).ToArray();
+
+            return new Packet(
+                deviceId: (DeviceId)deviceId,
+                timestamp: timestamp,
+                payload: new Payload(BitConverter.ToString(payload)),
+                type: type
+            );
+        }
+
+        private static Packet.PacketType GetPacketType(byte controlByte)
+        {
+            bool isTcPacket = (controlByte & 0b10000000) != 0; // Check if packet is TcPacket
+            if (isTcPacket)
+            {
+                return Packet.PacketType.TcPacket;
+            }
+            else
+            {
+                return Packet.PacketType.TmPacket;
+            }
+        }
+
+        /// <summary>
+        /// Validates the packet data by checking if it matches the expected version and length.
+        private static void ValidatePacket(byte[] packetData, int payloadLength)
+        {
+            if (packetData[VERSION_OFFSET] != Packet.VERSION)
             {
                 throw new ArgumentException("Packet version mismatch.");
             }
 
-            byte length = packetData[1];
-
-            // Check if length is valid
-            if (length != Packet.Size())
+            if (payloadLength != packetData[LENGTH_OFFSET])
             {
-                throw new ArgumentException("Packet length mismatch.");
+                throw new ArgumentException(
+                    $"Invalid packet length. Expected {packetData[LENGTH_OFFSET]}, got {packetData.Length}"
+                );
             }
+        }
 
-            // Treat control as a bit field
-            string control = Convert.ToString(packetData[2], 2).PadLeft(8, '0');
+        /// <summary>
+        /// Appends the termination byte to the packet data.
+        /// </summary>
+        /// <param name="packetData">The packet data to append the termination byte to.</param>
+        /// <returns>The packet data with the termination byte appended.</returns>
+        private static byte[] AppendTerminationByte(byte[] packetData)
+        {
+            return packetData.Append(_terminationByte).ToArray();
+        }
 
-            Packet.PacketType type;
-            // Check if packet is TM or TC
-            if (control[0] == '0')
+        public static int DetermineTerminationByteLocation(byte[] packetData)
+        {
+            // Find the index of the termination byte (0x00)
+            int terminationByteIndex = Array.IndexOf(packetData, _terminationByte);
+            // If the termination byte is not found, return -1
+            if (terminationByteIndex == -1)
             {
-                isTmPacket = true;
-                isTcPacket = false;
-                type = Packet.PacketType.TmPacket;
+                return -1;
             }
-            else
-            {
-                isTmPacket = false;
-                isTcPacket = true;
-                type = Packet.PacketType.TcPacket;
-            }
-
-            string deviceIdString = control.Substring(1, 4);
-
-            byte[] timestampBytes = packetData.Skip(3).Take(8).ToArray();
-
-            ulong timestamp = BitConverter.ToUInt64(timestampBytes, 0);
-
-            Console.WriteLine("Packet length: " + packetData.Length);
-            if (packetData.Length < 27) // 11 bytes overhead + 16 bytes payload
-            {
-                throw new ArgumentException("Packet data is too short for payload.");
-            }
-
-            byte[] payloadData = packetData.Skip(11).Take(16).ToArray();
-            if (payloadData.Length < 16)
-            {
-                throw new ArgumentException("Payload data is incomplete.");
-            }
-            ulong lower = BitConverter.ToUInt64(payloadData, 0);
-            ulong upper = BitConverter.ToUInt64(payloadData, 8);
-
-            return new Packet(
-                deviceId: (DeviceId)Convert.ToByte(deviceIdString, 2),
-                timestamp: timestamp,
-                payload: new Payload(new UInt128(lower, upper)),
-                type: type
-            );
+            // Return the index of the termination byte
+            return terminationByteIndex;
         }
     }
 }
