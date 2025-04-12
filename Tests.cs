@@ -1,5 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orbipacket;
+using Orbipacket.Library;
 
 namespace Orbipacket.Tests
 {
@@ -12,37 +15,41 @@ namespace Orbipacket.Tests
             byte[] packetData =
             [
                 0x01, // Version
-                27, // Length
-                0b1_10100_00, // Control (TC packet)}
-                0b11001111,
-                0b11110010,
-                0b00110101,
-                0b11010000,
+                16, // Length
+                0b1_00001_00, // Control (TC packet)}
                 0b00000000,
-                0b00000000,
-                0b00000000,
-                0b00000000, // Timestamp (8 bytes)
-                0x09,
-                0x0A,
-                0x0B,
-                0x0C,
-                0x0D,
-                0x0E,
-                0x0F,
-                0x10, // Payload lower (8 bytes)
-                0x11,
-                0x12,
-                0x13,
-                0x14,
-                0x15,
-                0x16,
-                0x17,
-                0x18, // Payload upper (8 bytes)
+                0b00111101,
+                0b11111001,
+                0b01010101,
+                0b10010000,
+                0b01101101,
+                0b11000111,
+                0b10000000, // Simulated Timestamp - Unix time in nanoseconds (8 bytes)
+                0x54,
+                0x45,
+                0x53,
+                0x54,
+                0x49,
+                0x4E,
+                0x47,
+                0x50,
+                0x41,
+                0x59,
+                0x4C,
+                0x4F,
+                0x41,
+                0x44,
+                0x30,
+                0x30,
+                0x1F,
+                0x7B,
+                0x00, // Termination byte
             ];
-            Decode decode = new();
-            var packet = decode.GetPacketInformation(packetData);
+            Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
+            byte[] encodedData = COBS.Encode(packetData.Take(packetData.Length - 1)).ToArray();
+            var packet = Decode.GetPacketInformation(encodedData);
             Console.WriteLine(
-                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
+                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload.ToString()}, Type: {packet.Type}"
             );
         }
     }
