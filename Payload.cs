@@ -1,3 +1,8 @@
+using System;
+using System.Linq;
+using Orbipacket;
+using Orbipacket.Library;
+
 namespace Orbipacket
 {
     public class Payload
@@ -13,6 +18,12 @@ namespace Orbipacket
         {
             return (byte)_payload.Length;
         }
+
+        public override string ToString()
+        {
+            byte[] payloadArray = _payload.Split('-').Select(s => Convert.ToByte(s, 16)).ToArray();
+            string payloadmessage = System.Text.Encoding.ASCII.GetString(payloadArray);
+            return payloadmessage;
         }
     }
 }
