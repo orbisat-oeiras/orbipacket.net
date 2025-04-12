@@ -70,6 +70,10 @@ namespace Orbipacket
 
         /// <summary>
         /// Validates the packet data by checking if it matches the expected version and length.
+        /// </summary>
+        /// <param name="packetData">The packet data to validate.</param>
+        /// <param name="payloadLength">The expected length of the payload.</param>
+        /// <exception cref="ArgumentException">Thrown if the packet version or length is invalid.</exception>
         private static void ValidatePacket(byte[] packetData, int payloadLength)
         {
             if (packetData[VERSION_OFFSET] != Packet.VERSION)
@@ -95,6 +99,9 @@ namespace Orbipacket
             return packetData.Append(_terminationByte).ToArray();
         }
 
+        /// <summary>
+        /// Determines the location of the termination byte in the packet data.
+        /// </summary>
         public static int DetermineTerminationByteLocation(byte[] packetData)
         {
             // Find the index of the termination byte (0x00)
