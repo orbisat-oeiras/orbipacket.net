@@ -2,7 +2,8 @@ namespace Orbipacket
 {
     public enum DeviceId : byte
     {
-        Device1 = 0,
-        MaxDeviceId = 31,
+        Pressure = 0,
+        Temperature = 1,
+        Humidity = 2,
     }
 }
