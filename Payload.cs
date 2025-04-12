@@ -2,16 +2,17 @@ namespace Orbipacket
 {
     public class Payload
     {
-        public System.UInt128 _payload { get; init; }
+        public string _payload { get; init; }
 
-        public Payload(System.UInt128 payload)
+        public Payload(string payload)
         {
             _payload = payload;
         }
 
-        public static byte Length()
+        public byte Length()
         {
-            return 16;
+            return (byte)_payload.Length;
+        }
         }
     }
 }
