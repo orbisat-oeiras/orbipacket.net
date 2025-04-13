@@ -132,3 +132,6 @@ $RECYCLE.BIN/
 
 _NCrunch*
 .vs
+
+# Visual Studio Code directories
+.vscode/

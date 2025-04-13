@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Orbipacket;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orbipacket.Library;
 
 namespace Orbipacket.Tests
@@ -46,10 +43,10 @@ namespace Orbipacket.Tests
                 0x00, // Termination byte
             ];
             Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
-            byte[] encodedData = COBS.Encode(packetData.Take(packetData.Length - 1)).ToArray();
+            byte[] encodedData = [.. COBS.Encode(packetData[..^1])];
             var packet = Decode.GetPacketInformation(encodedData);
             Console.WriteLine(
-                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload.ToString()}, Type: {packet.Type}"
+                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
             );
         }
     }
