@@ -231,25 +231,21 @@ namespace Orbipacket.Tests
             buffer.Add(packet3);
             buffer.Add([0x00]);
 
-            // Replace the simple buffer logging with this:
             Console.WriteLine("Buffer contents:");
             byte[] bufferArray = [.. buffer._buffer];
             Console.WriteLine($"Buffer size: {bufferArray.Length} bytes");
             Console.WriteLine($"Raw buffer: {BitConverter.ToString(bufferArray)}");
-            // Extract the first valid packet from the buffer
-            while (buffer.ExtractFirstValidPacket() != null)
-            {
-                byte[] extractedPacket = buffer.ExtractFirstValidPacket();
-                // Check if the extracted packet is valid
-                if (extractedPacket == null)
-                {
-                    Assert.Fail("No valid packet was extracted from the buffer");
-                }
 
-                // Decode the packet to get the information
+            // Extract the first valid packet from the buffer
+            byte[] extractedPacket;
+            while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)
+            {
                 var packet = Decode.GetPacketInformation(extractedPacket);
                 Console.WriteLine(
-                    $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
+                    $"Decoded Packet: DeviceId: {packet.DeviceId}, "
+                        + $"Timestamp: {packet.Timestamp}, "
+                        + $"Payload: {packet.Payload}, "
+                        + $"Type: {packet.Type}"
                 );
             }
         }

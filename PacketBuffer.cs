@@ -60,8 +60,8 @@ namespace Orbipacket
             // Extract the packet between termination bytes
             byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
 
-            // Keep the second termination byte and everything after it inside the buffer
-            _buffer = new Queue<byte>(bufferArray[endIndex..]);
+            // Keep remaining data in buffer
+            _buffer = new Queue<byte>(bufferArray[(endIndex + 1)..]);
 
             return packetData;
         }
