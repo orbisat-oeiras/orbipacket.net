@@ -18,11 +18,16 @@ namespace Orbipacket
         /// <param name="rawpacketData">The raw packet data (excluding termination byte) to decode.</param>
         public static Packet GetPacketInformation(byte[] rawpacketData)
         {
-            byte[] packetData = COBS.Decode(rawpacketData).ToArray();
+            // 1. Decode COBS
+            byte[] packetData = [.. COBS.Decode(rawpacketData)];
             Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
-            byte[] crc = Crc16.GetCRC(packetData); // Compute CRC for the packet data
 
-            byte[] crcFromPacket = rawpacketData[^2..][..2]; // Extract CRC from the packet data
+            // 2. Compute CRC of packet data
+            byte[] crc = Crc16.GetCRC(packetData[..^2]);
+
+            // 3. Extract CRC from packet
+            byte[] crcFromPacket = rawpacketData[^2..];
+
             Console.WriteLine("CRC from packet: " + BitConverter.ToString(crcFromPacket));
             Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
             if (!crc.SequenceEqual(crcFromPacket))
@@ -30,19 +35,20 @@ namespace Orbipacket
                 throw new ArgumentException("CRC mismatch. Packet data may be corrupted.");
             }
 
+            // 4. Extract payload length from packet data and  validate it
+            int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
+            ValidatePacket(packetData, payloadLength);
+
+            // 5. Analyze control byte
             byte controlByte = packetData[CONTROL_OFFSET];
+            byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 2-6) of control byte
             Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
 
-            byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 2-6) of control byte
-
+            // 6. Analyze timestamp
             byte[] timestampBytes = packetData[TIMESTAMP_OFFSET..][..8];
-
             ulong timestamp = BitConverter.ToUInt64(timestampBytes, 0);
 
-            int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
-
-            ValidatePacket(packetData, payloadLength); // Pass payloadLength to ValidatePacket
-
+            // 7. Extract payload
             byte[] payload = packetData[PAYLOAD_OFFSET..][..payloadLength];
 
             return new Packet(

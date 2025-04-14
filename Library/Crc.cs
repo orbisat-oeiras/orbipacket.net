@@ -19,7 +19,7 @@ namespace Orbipacket.Library
         {
             Crc16 crc = new();
             // Take everything except CRC (2 bytes)
-            byte[] crcData = packetData[..^2];
+            byte[] crcData = packetData;
             Console.WriteLine($"Computing CRC over: {BitConverter.ToString(crcData)}");
             byte[] result = crc.ComputeHash(crcData);
             // Reverse the byte order of the CRC result

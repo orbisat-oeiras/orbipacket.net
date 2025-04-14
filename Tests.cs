@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orbipacket.Library;
 
 namespace Orbipacket.Tests
@@ -7,41 +8,51 @@ namespace Orbipacket.Tests
     public class PacketTests
     {
         [TestMethod]
-        public void TestPacket()
+        [DataRow("pressure")]
+        [DataRow("temperature")]
+        [DataRow("humidity")]
+        public void TestPacket(string device)
         {
+            byte control;
+            byte[] payload;
+
+            if (device == "pressure")
+            {
+                control = 0b1_00000_00; // Control byte for pressure
+                payload = "100321.05"u8.ToArray(); // Example payload for pressure
+            }
+            else if (device == "temperature")
+            {
+                control = 0b1_00001_00; // Control byte for temperature
+                payload = "21.32"u8.ToArray(); // Example payload for temperature
+            }
+            else if (device == "humidity")
+            {
+                control = 0b1_00010_00; // Control byte for humidity
+                payload = "40.9202"u8.ToArray(); // Example payload for humidity
+            }
+            else
+            {
+                throw new ArgumentException("Invalid device type");
+            }
+
+            ulong timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000;
+
+            byte[] timestampBytes = BitConverter.GetBytes(timestamp);
+
             byte[] packetData =
             [
-                0x01, // Version
-                16, // Length
-                0b1_00001_00, // Control (TC packet)}
-                0b00000000,
-                0b00111101,
-                0b11111001,
-                0b01010101,
-                0b10010000,
-                0b01101101,
-                0b11000111,
-                0b10000000, // Simulated Timestamp - Unix time in nanoseconds (8 bytes)
-                0x54,
-                0x45,
-                0x53,
-                0x54,
-                0x49,
-                0x4E,
-                0x47,
-                0x50,
-                0x41,
-                0x59,
-                0x4C,
-                0x4F,
-                0x41,
-                0x44,
-                0x30,
-                0x30,
-                0x1F,
-                0x7B,
-                0x00, // Termination byte
+                0x01,
+                (byte)payload.Length,
+                control,
+                .. timestampBytes,
+                .. payload,
             ];
+            // Calculate CRC
+            byte[] crc = Crc16.GetCRC(packetData);
+            // Append CRC and termination byte to the packet data
+            packetData = packetData.Concat(crc).ToArray().Concat(new byte[] { 0x00 }).ToArray();
+
             Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
             byte[] encodedData = [.. COBS.Encode(packetData[..^1])];
             var packet = Decode.GetPacketInformation(encodedData);
