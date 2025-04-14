@@ -36,7 +36,9 @@ namespace Orbipacket.Tests
                 throw new ArgumentException("Invalid device type");
             }
 
-            ulong timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000;
+            ulong timestamp = (ulong)(
+                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1000000
+            );
 
             byte[] timestampBytes = BitConverter.GetBytes(timestamp);
 
@@ -51,7 +53,7 @@ namespace Orbipacket.Tests
             // Calculate CRC
             byte[] crc = Crc16.GetCRC(packetData);
             // Append CRC and termination byte to the packet data
-            packetData = packetData.Concat(crc).ToArray().Concat(new byte[] { 0x00 }).ToArray();
+            packetData = [.. packetData, .. crc, .. new byte[] { 0x00 }];
 
             Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
             byte[] encodedData = [.. COBS.Encode(packetData[..^1])];
