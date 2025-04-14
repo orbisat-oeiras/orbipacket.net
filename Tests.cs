@@ -121,7 +121,7 @@ namespace Orbipacket.Tests
 
             // Add the noisy data to the buffer
             buffer.Add(noisyData);
-
+            buffer.Add([0x00]);
             // Extract the first valid packet from the buffer
             byte[] extractedPacket = buffer.ExtractFirstValidPacket();
             // Check if the extracted packet is valid
@@ -156,6 +156,102 @@ namespace Orbipacket.Tests
             Console.WriteLine(
                 $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
             );
+        }
+
+        private byte[] CreatePacket(string device)
+        {
+            byte control;
+            byte[] payload;
+            // Different device types for testing
+            if (device == "pressure")
+            {
+                control = 0b0_00000_00; // Control byte for pressure
+                payload = "100321.05"u8.ToArray(); // Example payload for pressure
+            }
+            else if (device == "temperature")
+            {
+                control = 0b0_00001_00; // Control byte for temperature
+                payload = "21.32"u8.ToArray(); // Example payload for temperature
+            }
+            else if (device == "humidity")
+            {
+                control = 0b0_00010_00; // Control byte for humidity
+                payload = "40.9202"u8.ToArray(); // Example payload for humidity
+            }
+            else
+            {
+                throw new ArgumentException("Invalid device type");
+            }
+
+            // Fetch current timestamp in nanoseconds (since Unix epoch)
+            ulong timestamp = (ulong)(
+                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1000000
+            );
+            byte[] timestampBytes = BitConverter.GetBytes(timestamp);
+
+            // Create a new packet buffer
+            var buffer = new PacketBuffer();
+
+            // Create a packet with the specified device type and payload
+            byte[] packetData =
+            [
+                0x01,
+                (byte)payload.Length,
+                control,
+                .. timestampBytes,
+                .. payload,
+            ];
+
+            // Encode the data with COBS (because otherwise we'd catch a 0x00 byte in the middle of the packet)
+
+            byte[] crc = Crc16.GetCRC(packetData);
+            // Append CRC to the packet data
+            packetData = [.. packetData, .. crc];
+
+            byte[] encodedDataBeforeNoise = [.. COBS.Encode(packetData)];
+            return encodedDataBeforeNoise;
+        }
+
+        [TestMethod]
+        public void HandleMultiplePackets()
+        {
+            // Create a new packet buffer
+            var buffer = new PacketBuffer();
+
+            // Create multiple packets with different device types and payloads
+            byte[] packet1 = CreatePacket("pressure");
+            byte[] packet2 = CreatePacket("temperature");
+            byte[] packet3 = CreatePacket("humidity");
+
+            buffer.Add([0x00]);
+            buffer.Add(packet1);
+            buffer.Add([0x00]);
+            buffer.Add(packet2);
+            buffer.Add([0x00]);
+            buffer.Add(packet3);
+            buffer.Add([0x00]);
+
+            // Replace the simple buffer logging with this:
+            Console.WriteLine("Buffer contents:");
+            byte[] bufferArray = [.. buffer._buffer];
+            Console.WriteLine($"Buffer size: {bufferArray.Length} bytes");
+            Console.WriteLine($"Raw buffer: {BitConverter.ToString(bufferArray)}");
+            // Extract the first valid packet from the buffer
+            while (buffer.ExtractFirstValidPacket() != null)
+            {
+                byte[] extractedPacket = buffer.ExtractFirstValidPacket();
+                // Check if the extracted packet is valid
+                if (extractedPacket == null)
+                {
+                    Assert.Fail("No valid packet was extracted from the buffer");
+                }
+
+                // Decode the packet to get the information
+                var packet = Decode.GetPacketInformation(extractedPacket);
+                Console.WriteLine(
+                    $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
+                );
+            }
         }
     }
 }

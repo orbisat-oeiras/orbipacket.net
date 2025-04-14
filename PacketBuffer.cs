@@ -2,7 +2,7 @@ namespace Orbipacket
 {
     public class PacketBuffer
     {
-        private Queue<byte> _buffer = new();
+        public Queue<byte> _buffer = new();
 
         public PacketBuffer()
         {
@@ -19,31 +19,51 @@ namespace Orbipacket
 
         public byte[]? ExtractFirstValidPacket()
         {
-            if (_buffer.Count == 0)
-                return null;
+            if (_buffer.Count < 13)
+                return null; // Not enough data for a valid packet
 
             byte[] bufferArray = [.. _buffer];
 
-            // Check for termination byte
+            // Find the first occurrence of the termination byte
+            int startIndex = -1;
             for (int i = 0; i < bufferArray.Length; i++)
             {
                 if (bufferArray[i] == Decode._terminationByte)
                 {
-                    // Extract the packet data after the termination byte
-                    int packetLength = bufferArray.Length - (i + 1);
-                    if (packetLength <= 0)
-                        return null;
-
-                    byte[] packetData = new byte[packetLength];
-                    Array.Copy(bufferArray, i + 1, packetData, 0, packetLength);
-
-                    // Update buffer to contain only the extracted data
-                    _buffer = new Queue<byte>(packetData);
-
-                    return packetData;
+                    startIndex = i;
+                    break;
                 }
             }
-            return null;
+
+            if (startIndex == -1 || startIndex == bufferArray.Length - 1)
+                return null; // Termination byte not found
+
+            // Find next termination byte
+            int endIndex = -1;
+            for (int i = startIndex + 1; i < bufferArray.Length; i++)
+            {
+                if (bufferArray[i] == Decode._terminationByte)
+                {
+                    endIndex = i;
+                    break;
+                }
+            }
+
+            // If no second termination byte found, packet is incomplete
+            if (endIndex == -1)
+            {
+                // Keep everything from the first termination byte onwards
+                _buffer = new Queue<byte>(bufferArray[startIndex..]);
+                return null;
+            }
+
+            // Extract the packet between termination bytes
+            byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
+
+            // Keep the second termination byte and everything after it inside the buffer
+            _buffer = new Queue<byte>(bufferArray[endIndex..]);
+
+            return packetData;
         }
     }
 }
