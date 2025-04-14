@@ -33,7 +33,10 @@ namespace Orbipacket.Library
                 return null;
 
             if (Input.Count() > 254)
-                throw new ArgumentOutOfRangeException("Input length must not exceed 254 bytes");
+                throw new ArgumentOutOfRangeException(
+                    nameof(Input),
+                    "Input length must not exceed 254 bytes"
+                );
 
             var result = new List<byte>();
             int distanceIndex = 0;

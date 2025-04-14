@@ -16,7 +16,7 @@ namespace Orbipacket
 
         public override string ToString()
         {
-            byte[] payloadArray = Value.Split('-').Select(s => Convert.ToByte(s, 16)).ToArray();
+            byte[] payloadArray = [.. Value.Split('-').Select(s => Convert.ToByte(s, 16))];
             string payloadMessage = System.Text.Encoding.ASCII.GetString(payloadArray);
             return payloadMessage;
         }
