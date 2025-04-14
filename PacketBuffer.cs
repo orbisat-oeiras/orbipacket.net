@@ -61,7 +61,10 @@ namespace Orbipacket
             byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
 
             // Keep remaining data in buffer
-            _buffer = new Queue<byte>(bufferArray[(endIndex + 1)..]);
+            _buffer = new Queue<byte>(bufferArray[endIndex..]);
+            Console.WriteLine(
+                "Current buffer contents: " + BitConverter.ToString(_buffer.ToArray())
+            );
 
             return packetData;
         }
