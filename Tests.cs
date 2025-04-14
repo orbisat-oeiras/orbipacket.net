@@ -225,11 +225,6 @@ namespace Orbipacket.Tests
             buffer.Add(packet3);
             buffer.Add([0x00]);
 
-            Console.WriteLine("Buffer contents:");
-            byte[] bufferArray = [.. buffer._buffer];
-            Console.WriteLine($"Buffer size: {bufferArray.Length} bytes");
-            Console.WriteLine($"Raw buffer: {BitConverter.ToString(bufferArray)}");
-
             // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
             byte[] extractedPacket;
             while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)

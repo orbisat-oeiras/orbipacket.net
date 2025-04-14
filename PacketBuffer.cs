@@ -26,6 +26,7 @@ namespace Orbipacket
 
             // Find the first occurrence of the termination byte
             int startIndex = -1;
+
             for (int i = 0; i < bufferArray.Length; i++)
             {
                 if (bufferArray[i] == Decode._terminationByte)
@@ -39,6 +40,7 @@ namespace Orbipacket
                 return null; // Termination byte not found
 
             // Find next termination byte
+
             int endIndex = -1;
             for (int i = startIndex + 1; i < bufferArray.Length; i++)
             {
@@ -59,12 +61,11 @@ namespace Orbipacket
 
             // Extract the packet between termination bytes
             byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
-
-            // Keep remaining data in buffer
-            _buffer = new Queue<byte>(bufferArray[endIndex..]);
             Console.WriteLine(
                 "Current buffer contents: " + BitConverter.ToString(_buffer.ToArray())
             );
+            // Keep remaining data in buffer
+            _buffer = new Queue<byte>(bufferArray[endIndex..]);
 
             return packetData;
         }

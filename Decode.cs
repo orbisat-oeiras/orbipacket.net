@@ -28,8 +28,8 @@ namespace Orbipacket
             // 3. Extract CRC from packet
             byte[] crcFromPacket = rawpacketData[^2..];
 
-            Console.WriteLine("CRC from packet: " + BitConverter.ToString(crcFromPacket));
-            Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
+            // Console.WriteLine("CRC from packet: " + BitConverter.ToString(crcFromPacket));
+            // Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
             if (!crc.SequenceEqual(crcFromPacket))
             {
                 throw new ArgumentException("CRC mismatch. Packet data may be corrupted.");

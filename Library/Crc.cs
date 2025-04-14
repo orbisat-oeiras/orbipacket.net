@@ -18,11 +18,16 @@ namespace Orbipacket.Library
         public static byte[] GetCRC(byte[] packetData)
         {
             Crc16 crc = new();
+
             byte[] crcData = packetData;
+
             // Console.WriteLine("CRC computed.");
+
             byte[] result = crc.ComputeHash(crcData);
-            // Reverse the byte order of the CRC result
+
+            // Reverse the byte order of the CRC result, for some reason this comes reversed (or maybe I'm just wrong)
             Array.Reverse(result);
+
             return result;
         }
     }
