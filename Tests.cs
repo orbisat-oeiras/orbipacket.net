@@ -158,7 +158,7 @@ namespace Orbipacket.Tests
             );
         }
 
-        private byte[] CreatePacket(string device)
+        private static byte[] CreatePacket(string device)
         {
             byte control;
             byte[] payload;
