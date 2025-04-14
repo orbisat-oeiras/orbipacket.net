@@ -189,9 +189,6 @@ namespace Orbipacket.Tests
             );
             byte[] timestampBytes = BitConverter.GetBytes(timestamp);
 
-            // Create a new packet buffer
-            var buffer = new PacketBuffer();
-
             // Create a packet with the specified device type and payload
             byte[] packetData =
             [
@@ -201,8 +198,6 @@ namespace Orbipacket.Tests
                 .. timestampBytes,
                 .. payload,
             ];
-
-            // Encode the data with COBS (because otherwise we'd catch a 0x00 byte in the middle of the packet)
 
             byte[] crc = Crc16.GetCRC(packetData);
             // Append CRC to the packet data
@@ -215,8 +210,7 @@ namespace Orbipacket.Tests
         [TestMethod]
         public void HandleMultiplePackets()
         {
-            // Create a new packet buffer
-            var buffer = new PacketBuffer();
+            PacketBuffer buffer = new();
 
             // Create multiple packets with different device types and payloads
             byte[] packet1 = CreatePacket("pressure");
@@ -236,7 +230,7 @@ namespace Orbipacket.Tests
             Console.WriteLine($"Buffer size: {bufferArray.Length} bytes");
             Console.WriteLine($"Raw buffer: {BitConverter.ToString(bufferArray)}");
 
-            // Extract the first valid packet from the buffer
+            // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
             byte[] extractedPacket;
             while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)
             {

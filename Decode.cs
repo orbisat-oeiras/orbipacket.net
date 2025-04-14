@@ -22,7 +22,7 @@ namespace Orbipacket
             byte[] packetData = [.. COBS.Decode(rawpacketData)];
             Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
 
-            // 2. Compute CRC of packet data
+            // 2. Compute CRC of packet data (without CRC bytes)
             byte[] crc = Crc16.GetCRC(packetData[..^2]);
 
             // 3. Extract CRC from packet
@@ -92,17 +92,10 @@ namespace Orbipacket
         /// </summary>
         /// <param name="packetData">The packet data to append the termination byte to.</param>
         /// <returns>The packet data with the termination byte appended.</returns>
-        private static byte[] AppendTerminationByte(byte[] packetData)
-        {
-            return [.. packetData, _terminationByte];
-        }
-
-        /// <summary>
-        /// Determines the location of the termination byte in the packet data.
-        /// </summary>
-        public static int DetermineTerminationByteLocation(byte[] packetData)
-        {
-            return Array.IndexOf(packetData, _terminationByte);
-        }
+        // private static byte[] AppendTerminationByte(byte[] packetData)
+        // {
+        //     return [.. packetData, _terminationByte];
+        // }
+        // To be implemented, idk if this has any use (it's more of an encoding thing)
     }
 }
