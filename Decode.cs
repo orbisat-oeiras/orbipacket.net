@@ -10,7 +10,7 @@ namespace Orbipacket
         private const int TIMESTAMP_OFFSET = 3;
         private const int PAYLOAD_OFFSET = 11;
         public const int CRC_TERMINATION_BYTE_SIZE = 3; // 2 bytes for CRC, 1 0x00 termination byte
-        private const byte _terminationByte = 0x00; // Termination byte
+        public const byte _terminationByte = 0x00; // Termination byte
 
         /// <summary>
         /// Handles decoding of packet data into structured Packet objects
