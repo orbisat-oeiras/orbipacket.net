@@ -89,6 +89,9 @@ namespace Orbipacket
             // Decode packet data using COBS
             byte[] decodedData = [.. COBS.Decode(packetData)];
             // Compute CRC of packet data (without CRC bytes)
+            if (decodedData.Length < 2)
+                return false; // Not enough data for CRC check
+
             byte[] crc = Crc16.GetCRC(decodedData[..^2]);
 
             // Extract CRC from packet
