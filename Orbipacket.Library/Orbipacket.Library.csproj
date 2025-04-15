@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<PackageId>OrbiPacket</PackageId>
+		<Version>1.2.1</Version>
+		<Authors>Orbisat-Oeiras</Authors>
+		<Description>C# Implementation of the OrbiPacket protocol.</Description>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/orbisat-oeiras/orbipacket.net</RepositoryUrl>
+		<PackageTags>protocol, cansat</PackageTags>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CrcDotNET" Version="1.0.3" />
+		<PackageReference Include="Nito.HashAlgorithms" Version="1.0.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+</Project>
