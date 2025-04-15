@@ -249,11 +249,13 @@ namespace Orbipacket.Tests
             byte[] packet2 = CreatePacket("temperature");
             byte[] packet3 = CreatePacket("humidity");
 
+            byte[] uncompletePacket1 = [.. packet1[..^10]]; // Simulate an uncomplete packet
+
             Console.WriteLine("Packet 1: " + BitConverter.ToString(packet1));
-            Console.WriteLine("Packet 1 (uncomplete):" + BitConverter.ToString(packet1[^10..]));
+            Console.WriteLine("Packet 1 (uncomplete):" + BitConverter.ToString(uncompletePacket1));
 
             buffer.Add([0x00]);
-            buffer.Add(packet1[^10..]);
+            buffer.Add(uncompletePacket1);
             buffer.Add([0x00]);
             buffer.Add(packet1);
             buffer.Add([0x00]);
