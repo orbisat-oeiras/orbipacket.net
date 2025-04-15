@@ -5,7 +5,7 @@ namespace Orbipacket
         public const byte VERSION = 0x01;
         public DeviceId DeviceId { get; init; }
         public Payload Payload { get; init; }
-        public System.UInt64 Timestamp { get; init; }
+        public ulong Timestamp { get; init; }
 
         public enum PacketType
         {
