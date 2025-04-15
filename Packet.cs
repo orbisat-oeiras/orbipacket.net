@@ -11,6 +11,7 @@ namespace Orbipacket
         {
             TmPacket,
             TcPacket,
+            Unknown,
         }
 
         public PacketType Type { get; init; }

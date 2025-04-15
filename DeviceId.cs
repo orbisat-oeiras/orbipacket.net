@@ -5,5 +5,6 @@ namespace Orbipacket
         Pressure = 0,
         Temperature = 1,
         Humidity = 2,
+        Unknown = 31,
     }
 }
