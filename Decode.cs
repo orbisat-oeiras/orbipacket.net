@@ -37,7 +37,17 @@ namespace Orbipacket
 
             // 4. Extract payload length from packet data and  validate it
             int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
-            ValidatePacket(packetData, payloadLength);
+
+            if (!ValidatePacket(packetData, payloadLength))
+            {
+                Console.WriteLine("Invalid packet, discarding...");
+                return new Packet(
+                    deviceId: DeviceId.Unknown,
+                    timestamp: 0,
+                    payload: new Payload(""),
+                    type: Packet.PacketType.Unknown
+                );
+            }
 
             // 5. Analyze control byte
             byte controlByte = packetData[CONTROL_OFFSET];
@@ -72,19 +82,20 @@ namespace Orbipacket
         /// <param name="packetData">The packet data to validate.</param>
         /// <param name="payloadLength">The expected length of the payload.</param>
         /// <exception cref="ArgumentException">Thrown if the packet version or length is invalid.</exception>
-        private static void ValidatePacket(byte[] packetData, int payloadLength)
+        private static bool ValidatePacket(byte[] packetData, int payloadLength)
         {
             if (packetData[VERSION_OFFSET] != Packet.VERSION)
             {
-                throw new ArgumentException("Packet version mismatch.");
+                Console.WriteLine("Packet version mismatch.");
+                return false;
             }
 
             if (payloadLength != packetData[LENGTH_OFFSET])
             {
-                throw new ArgumentException(
-                    $"Invalid packet length. Expected {packetData[LENGTH_OFFSET]}, got {packetData.Length}"
-                );
+                Console.WriteLine("Payload length mismatch.");
+                return false;
             }
+            return true;
         }
 
         /// <summary>
