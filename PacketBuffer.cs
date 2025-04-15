@@ -69,7 +69,7 @@ namespace Orbipacket
                 "Current buffer contents: " + BitConverter.ToString(_buffer.ToArray())
             );
 
-            if (packetData.Length < 13 || !CheckIfCRCIsValid(packetData))
+            if (packetData.Length < 13 || !IsCRCValid(packetData))
             {
                 // CRC check failed, discard packet
                 Console.WriteLine("CRC check failed, discarding packet.");
@@ -84,7 +84,7 @@ namespace Orbipacket
             return packetData;
         }
 
-        public static bool CheckIfCRCIsValid(byte[] packetData)
+        public static bool IsCRCValid(byte[] packetData)
         {
             // Decode packet data using COBS
             byte[] decodedData = [.. COBS.Decode(packetData)];
