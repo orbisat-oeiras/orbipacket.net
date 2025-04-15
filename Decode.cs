@@ -16,7 +16,7 @@ namespace Orbipacket
         /// Handles decoding of packet data into structured Packet objects
         /// </summary>
         /// <param name="rawpacketData">The raw packet data (excluding termination byte) to decode.</param>
-        public static Packet GetPacketInformation(byte[] rawpacketData)
+        public static Packet? GetPacketInformation(byte[] rawpacketData)
         {
             // 1. Decode COBS
             byte[] packetData = [.. COBS.Decode(rawpacketData)];
@@ -32,7 +32,7 @@ namespace Orbipacket
             // Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
             if (!crc.SequenceEqual(crcFromPacket))
             {
-                throw new ArgumentException("CRC mismatch. Packet data may be corrupted.");
+                return null;
             }
 
             // 4. Extract payload length from packet data and  validate it

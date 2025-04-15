@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using Orbipacket.Library;
+
 namespace Orbipacket
 {
     public class PacketBuffer
@@ -61,13 +64,38 @@ namespace Orbipacket
 
             // Extract the packet between termination bytes
             byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
+
             Console.WriteLine(
                 "Current buffer contents: " + BitConverter.ToString(_buffer.ToArray())
             );
+
+            if (packetData.Length < 13 || !CheckIfCRCIsValid(packetData))
+            {
+                // CRC check failed, discard packet
+                Console.WriteLine("CRC check failed, discarding packet.");
+                Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
+                _buffer = new Queue<byte>(bufferArray[endIndex..]);
+                return ExtractFirstValidPacket();
+            }
+
             // Keep remaining data in buffer
             _buffer = new Queue<byte>(bufferArray[endIndex..]);
 
             return packetData;
+        }
+
+        public static bool CheckIfCRCIsValid(byte[] packetData)
+        {
+            // Decode packet data using COBS
+            byte[] decodedData = [.. COBS.Decode(packetData)];
+            // Compute CRC of packet data (without CRC bytes)
+            byte[] crc = Crc16.GetCRC(decodedData[..^2]);
+
+            // Extract CRC from packet
+            byte[] crcFromPacket = decodedData[^2..];
+
+            // Check if computed CRC matches the one in the packet
+            return crc.SequenceEqual(crcFromPacket);
         }
     }
 }

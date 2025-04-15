@@ -238,5 +238,42 @@ namespace Orbipacket.Tests
                 );
             }
         }
+
+        [TestMethod]
+        public void TestUncompletePacket()
+        {
+            PacketBuffer buffer = new();
+
+            // Create multiple packets with different device types and payloads
+            byte[] packet1 = CreatePacket("pressure");
+            byte[] packet2 = CreatePacket("temperature");
+            byte[] packet3 = CreatePacket("humidity");
+
+            Console.WriteLine("Packet 1: " + BitConverter.ToString(packet1));
+            Console.WriteLine("Packet 1 (uncomplete):" + BitConverter.ToString(packet1[^10..]));
+
+            buffer.Add([0x00]);
+            buffer.Add(packet1[^10..]);
+            buffer.Add([0x00]);
+            buffer.Add(packet1);
+            buffer.Add([0x00]);
+            buffer.Add(packet2);
+            buffer.Add([0x00]);
+            buffer.Add(packet3);
+            buffer.Add([0x00]);
+
+            // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
+            byte[] extractedPacket;
+            while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)
+            {
+                var packet = Decode.GetPacketInformation(extractedPacket);
+                Console.WriteLine(
+                    $"Decoded Packet: DeviceId: {packet.DeviceId}, "
+                        + $"Timestamp: {packet.Timestamp}, "
+                        + $"Payload: {packet.Payload}, "
+                        + $"Type: {packet.Type}"
+                );
+            }
+        }
     }
 }
