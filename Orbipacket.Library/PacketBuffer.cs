@@ -22,66 +22,52 @@ namespace Orbipacket
 
         public byte[]? ExtractFirstValidPacket()
         {
-            if (_buffer.Count < 13)
-                return null; // Not enough data for a valid packet
-
-            byte[] bufferArray = [.. _buffer];
-
-            // Find the first occurrence of the termination byte
-            int startIndex = -1;
-
-            for (int i = 0; i < bufferArray.Length; i++)
+            while (_buffer.Count >= 13)
             {
-                if (bufferArray[i] == Decode._terminationByte)
+                if (_buffer.Count < 13)
+                    return null; // Not enough data for a valid packet
+
+                byte[] bufferArray = [.. _buffer];
+
+                // Find the first occurrence of the termination byte
+                int startIndex = Array.IndexOf(bufferArray, Decode._terminationByte);
+
+                if (startIndex == -1 || startIndex == bufferArray.Length - 1)
+                    return null; // Termination byte not found
+
+                // Find next termination byte
+
+                int endIndex = Array.IndexOf(bufferArray, Decode._terminationByte, startIndex + 1);
+
+                // If no second termination byte found, packet is incomplete
+                if (endIndex == -1)
                 {
-                    startIndex = i;
-                    break;
+                    // Keep everything from the first termination byte onwards
+                    _buffer = new Queue<byte>(bufferArray[startIndex..]);
+                    return null;
                 }
-            }
 
-            if (startIndex == -1 || startIndex == bufferArray.Length - 1)
-                return null; // Termination byte not found
-
-            // Find next termination byte
-
-            int endIndex = -1;
-            for (int i = startIndex + 1; i < bufferArray.Length; i++)
-            {
-                if (bufferArray[i] == Decode._terminationByte)
-                {
-                    endIndex = i;
-                    break;
-                }
-            }
-
-            // If no second termination byte found, packet is incomplete
-            if (endIndex == -1)
-            {
-                // Keep everything from the first termination byte onwards
-                _buffer = new Queue<byte>(bufferArray[startIndex..]);
-                return null;
-            }
-
-            // Extract the packet between termination bytes
-            byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
-
-            Console.WriteLine(
-                "Current buffer contents: " + BitConverter.ToString(_buffer.ToArray())
-            );
-
-            if (packetData.Length < 13 || !IsCRCValid(packetData))
-            {
-                // CRC check failed, discard packet
-                Console.WriteLine("CRC check failed, discarding packet.");
-                Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
+                // Extract the packet between termination bytes
+                byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
                 _buffer = new Queue<byte>(bufferArray[endIndex..]);
-                return ExtractFirstValidPacket();
+
+
+                Console.WriteLine(
+                    "Current buffer contents: " + BitConverter.ToString(bufferArray)
+                );
+
+                if (packetData.Length < 13 || !IsCRCValid(packetData))
+                {
+                    // CRC check failed, discard packet
+                    Console.WriteLine("CRC check failed or packet is too short, discarding packet.");
+                    Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
+                    _buffer = new Queue<byte>(bufferArray[endIndex..]);
+                    continue;
+                }
+
+                return packetData;
             }
-
-            // Keep remaining data in buffer
-            _buffer = new Queue<byte>(bufferArray[endIndex..]);
-
-            return packetData;
+            return null;
         }
 
         public static bool IsCRCValid(byte[] packetData)

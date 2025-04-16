@@ -196,8 +196,8 @@ namespace Orbipacket.Tests
             byte[] crc = Crc16.GetCRC(packetData);
             // Append CRC to the packet data
             packetData = [.. packetData, .. crc];
-
             byte[] encodedDataBeforeNoise = [.. COBS.Encode(packetData)];
+            Console.WriteLine(BitConverter.ToString(encodedDataBeforeNoise));
             return encodedDataBeforeNoise;
         }
 
