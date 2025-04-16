@@ -10,6 +10,11 @@ namespace Orbipacket.Tests
     {
         private readonly byte[] NOISE_DATA = [0xA1, 0xA2, 0xA3, 0xA4, 0xA5];
 
+        /// <summary>
+        /// Tests sending just one full packet, with valid CRC and termination bytes.
+        /// </summary>
+        /// <param name="device"></param>
+        /// <exception cref="ArgumentException"></exception>
         [TestMethod]
         [DataRow("pressure")]
         [DataRow("temperature")]
@@ -65,6 +70,14 @@ namespace Orbipacket.Tests
                 $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
             );
         }
+
+        /// <summary>
+        /// Test sending a packet with noise data.
+        /// This proves that the implementation is
+        /// able to distinguish between real data and uncomplete packets.
+        /// </summary>
+        /// <param name="device">Device type. Can either be pressure, temperature or humidity.</param>
+        /// <exception cref="ArgumentException"></exception>
 
         [TestMethod]
         [DataRow("pressure")]
@@ -152,6 +165,14 @@ namespace Orbipacket.Tests
             );
         }
 
+        /// <summary>
+        ///  Create a single packet, with variable devices.
+        /// </summary>
+        /// <param name="device">The device type to test.
+        /// Either pressure, temperature or humidity.</param>
+        /// <returns>Encoded packet data, along with valid CRC bytes.</returns>
+        /// <exception cref="ArgumentException"></exception>
+
         private static byte[] CreatePacket(string device)
         {
             byte control;
@@ -201,6 +222,10 @@ namespace Orbipacket.Tests
             return encodedDataBeforeNoise;
         }
 
+        /// <summary>
+        /// Handles multiple packets.
+        /// Proves that the implementation is able to distinguish different packets.
+        /// </summary>
         [TestMethod]
         public void HandleMultiplePackets()
         {
@@ -233,6 +258,10 @@ namespace Orbipacket.Tests
             }
         }
 
+        /// <summary>
+        /// Handles packets, with embedded uncomplete packets along the way.
+        /// Proves that the implementation is able to handle more than one packet coming in a byte array.
+        /// </summary>
         [TestMethod]
         public void TestUncompletePacket()
         {
