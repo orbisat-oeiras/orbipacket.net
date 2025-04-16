@@ -2,7 +2,7 @@
 [Orbipacket](https://github.com/orbisat-oeiras/orbipacket) is a communication protocol developed by OrbiSat Oeiras for communication with CanSat devices. This is an implementation of that protocol in C#.
 
 ## Nuget
-
+You can find this package on nuget at [Orbipacket](https://www.nuget.org/packages/OrbiPacket/).
 
 ## Installation
 To install the Orbipacket protocol, simply add the package to your .csproj with:
@@ -10,7 +10,7 @@ To install the Orbipacket protocol, simply add the package to your .csproj with:
 dotnet add package Orbipacket
 ```
 ## Usage
-You can find different uses in the [Tests.cs](https://github.com/orbisat-oeiras/orbipacket.net/blob/main/Tests.cs) file. For example, to add packets to the buffer and analyze them:
+You can find different uses in the [Tests.cs](https://github.com/orbisat-oeiras/orbipacket.net/blob/main/Orbipacket.Tests/Tests.cs) file. For example, to add packets to the buffer and analyze them:
 ```csharp
 PacketBuffer buffer = new();
 byte[] packet1;
