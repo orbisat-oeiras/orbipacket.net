@@ -35,8 +35,7 @@ namespace Orbipacket
                     return null;
                 }
 
-                // Find next termination byte
-
+                // Find the next termination byte
                 int endIndex = Array.IndexOf(bufferArray, Decode._terminationByte, startIndex + 1);
 
                 // If no second termination byte found, packet is incomplete
@@ -44,22 +43,22 @@ namespace Orbipacket
                 {
                     // Keep everything from the first termination byte onwards
                     _buffer = new Queue<byte>(bufferArray[startIndex..]);
-                    return null;
+                    return null; // Wait for more data
                 }
 
-                // Extract the packet between termination bytes
+                // Extract packet data (everything up to but not including the termination byte)
                 byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
+
                 _buffer = new Queue<byte>(bufferArray[endIndex..]);
 
-
-                Console.WriteLine(
-                    "Current buffer contents: " + BitConverter.ToString(bufferArray)
-                );
+                Console.WriteLine($"Attempting to process packet of length {packetData.Length}");
+                Console.WriteLine("Packet: " + BitConverter.ToString(packetData));
 
                 if (packetData.Length < 13 || !IsCRCValid(packetData))
                 {
-                    // CRC check failed, discard packet
-                    Console.WriteLine("CRC check failed or packet is too short, discarding packet.");
+                    Console.WriteLine(
+                        "CRC check failed or packet is too short, discarding packet."
+                    );
                     Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
                     _buffer = new Queue<byte>(bufferArray[endIndex..]);
                     continue;
