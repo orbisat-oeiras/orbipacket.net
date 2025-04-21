@@ -60,7 +60,6 @@ namespace Orbipacket
                         "CRC check failed or packet is too short, discarding packet."
                     );
                     Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
-                    _buffer = new Queue<byte>(bufferArray[endIndex..]);
                     continue;
                 }
 
