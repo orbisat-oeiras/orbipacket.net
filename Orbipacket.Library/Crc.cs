@@ -25,9 +25,6 @@ namespace Orbipacket.Library
 
             byte[] result = crc.ComputeHash(crcData);
 
-            // Reverse the byte order of the CRC result, for some reason this comes reversed (or maybe I'm just wrong)
-            Array.Reverse(result);
-
             return result;
         }
     }
