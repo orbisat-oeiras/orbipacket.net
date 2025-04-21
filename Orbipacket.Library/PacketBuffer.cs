@@ -30,7 +30,10 @@ namespace Orbipacket
                 int startIndex = Array.IndexOf(bufferArray, Decode._terminationByte);
 
                 if (startIndex == -1 || startIndex == bufferArray.Length - 1)
-                    return null; // Termination byte not found
+                {
+                    _buffer.Clear(); // Clear invalid data
+                    return null;
+                }
 
                 // Find next termination byte
 
