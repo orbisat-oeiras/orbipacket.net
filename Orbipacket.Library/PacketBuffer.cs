@@ -24,9 +24,6 @@ namespace Orbipacket
         {
             while (_buffer.Count >= 13)
             {
-                if (_buffer.Count < 13)
-                    return null; // Not enough data for a valid packet
-
                 byte[] bufferArray = [.. _buffer];
 
                 // Find the first occurrence of the termination byte
