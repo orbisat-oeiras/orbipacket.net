@@ -2,9 +2,9 @@ namespace Orbipacket
 {
     public class Payload
     {
-        public string Value { get; init; }
+        public byte[] Value { get; init; }
 
-        public Payload(string payload)
+        public Payload(byte[] payload)
         {
             Value = payload;
         }
@@ -16,13 +16,13 @@ namespace Orbipacket
 
         public override string ToString()
         {
-            if (string.IsNullOrEmpty(Value))
+            if (Value.Length == 0)
             {
                 return string.Empty;
             }
-            byte[] payloadArray = [.. Value.Split('-').Select(s => Convert.ToByte(s, 16))];
-            string payloadMessage = System.Text.Encoding.ASCII.GetString(payloadArray);
-            return payloadMessage;
+            // Convert byte array to hex string
+            string hexString = BitConverter.ToString(Value).Replace("-", "");
+            return hexString;
         }
     }
 }

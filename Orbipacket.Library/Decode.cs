@@ -44,7 +44,7 @@ namespace Orbipacket
                 return new Packet(
                     deviceId: DeviceId.Unknown,
                     timestamp: 0,
-                    payload: new Payload(""),
+                    payload: new Payload([]),
                     type: Packet.PacketType.Unknown
                 );
             }
@@ -64,7 +64,7 @@ namespace Orbipacket
             return new Packet(
                 deviceId: (DeviceId)deviceId,
                 timestamp: timestamp,
-                payload: new Payload(BitConverter.ToString(payload)),
+                payload: new Payload(payload),
                 type: type
             );
         }
