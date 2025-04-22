@@ -21,8 +21,7 @@ namespace Orbipacket
                 return string.Empty;
             }
             // Convert byte array to hex string
-            string hexString = BitConverter.ToString(Value).Replace("-", "");
-            return hexString;
+            return BitConverter.ToString(Value).Replace("-", "");
         }
     }
 }
