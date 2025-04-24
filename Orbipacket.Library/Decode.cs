@@ -20,7 +20,7 @@ namespace Orbipacket
         {
             // 1. Decode COBS
             byte[] packetData = [.. COBS.Decode(rawpacketData)];
-            Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
+            // Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
 
             // 2. Compute CRC of packet data (without CRC bytes)
             byte[] crc = Crc16.GetCRC(packetData[..^2]);

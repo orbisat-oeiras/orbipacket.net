@@ -51,9 +51,6 @@ namespace Orbipacket
 
                 _buffer = new Queue<byte>(bufferArray[endIndex..]);
 
-                Console.WriteLine($"Attempting to process packet of length {packetData.Length}");
-                Console.WriteLine("Packet: " + BitConverter.ToString(packetData));
-
                 if (packetData.Length < 13 || !IsCRCValid(packetData))
                 {
                     Console.WriteLine(
