@@ -29,7 +29,7 @@ namespace Orbipacket
                 // Find the first occurrence of the termination byte
                 int startIndex = Array.IndexOf(bufferArray, Decode._terminationByte);
 
-                if (startIndex == -1 || startIndex == bufferArray.Length - 1)
+                if (startIndex == -1)
                 {
                     _buffer.Clear(); // Clear invalid data
                     return null;
@@ -41,7 +41,15 @@ namespace Orbipacket
                 // If no second termination byte found, packet is incomplete
                 if (endIndex == -1)
                 {
-                    // Keep everything from the first termination byte onwards
+                    // If no second termination byte is found, check if the remaining data forms a valid packet
+                    byte[] remainingData = bufferArray[(startIndex + 1)..];
+                    if (remainingData.Length >= 13 && IsCRCValid(remainingData))
+                    {
+                        _buffer.Clear(); // Clear the buffer since the packet is complete
+                        return remainingData;
+                    }
+
+                    // Otherwise, keep everything from the first termination byte onwards
                     _buffer = new Queue<byte>(bufferArray[startIndex..]);
                     return null; // Wait for more data
                 }
@@ -49,6 +57,7 @@ namespace Orbipacket
                 // Extract packet data (everything up to but not including the termination byte)
                 byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
 
+                // Update the buffer to keep data after the second termination byte
                 _buffer = new Queue<byte>(bufferArray[endIndex..]);
 
                 if (packetData.Length < 13 || !IsCRCValid(packetData))
@@ -62,6 +71,7 @@ namespace Orbipacket
 
                 return packetData;
             }
+
             return null;
         }
 
