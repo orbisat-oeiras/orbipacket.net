@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Orbipacket.Library;
 
 namespace Orbipacket
@@ -12,6 +11,9 @@ namespace Orbipacket
             _buffer = new Queue<byte>();
         }
 
+        /// <summary>
+        /// Adds a byte array to the buffer.
+        /// </summary>
         public void Add(byte[] data)
         {
             foreach (var byteData in data)
@@ -20,6 +22,14 @@ namespace Orbipacket
             }
         }
 
+        /// <summary>
+        /// Manipulates the buffer directly and
+        /// searches the buffer for the first available packet and
+        /// removes that packet from the buffer.
+        /// </summary>
+        /// <returns>
+        /// A delimited and usable byte array for the Decode class.
+        /// </returns>
         public byte[]? ExtractFirstValidPacket()
         {
             while (_buffer.Count >= 13)
@@ -29,9 +39,14 @@ namespace Orbipacket
                 // Find the first occurrence of the termination byte
                 int startIndex = Array.IndexOf(bufferArray, Decode._terminationByte);
 
+                // TODO: Is it actually better to automatically clear the buffer?
+                // Or do we make it so the end user has to manually clear it?
+                // How would we deal with invalid packets?
+                // But yeah what we have works
+
                 if (startIndex == -1)
                 {
-                    _buffer.Clear(); // Clear invalid data
+                    ClearBuffer(); // Clear invalid data
                     return null;
                 }
 
@@ -45,7 +60,7 @@ namespace Orbipacket
                     byte[] remainingData = bufferArray[(startIndex + 1)..];
                     if (remainingData.Length >= 13 && IsCRCValid(remainingData))
                     {
-                        _buffer.Clear(); // Clear the buffer since the packet is complete
+                        ClearBuffer(); // Clear the buffer since the packet is complete
                         return remainingData;
                     }
 
@@ -75,6 +90,17 @@ namespace Orbipacket
             return null;
         }
 
+        /// <summary>
+        /// Clears the packet buffer.
+        /// </summary>
+        public void ClearBuffer()
+        {
+            _buffer.Clear();
+        }
+
+        /// <summary>
+        /// Checks whether the CRC of the packet is valid or not
+        /// </summary>
         public static bool IsCRCValid(byte[] packetData)
         {
             // Decode packet data using COBS
