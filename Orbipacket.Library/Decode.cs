@@ -16,8 +16,8 @@ namespace Orbipacket
         /// Handles decoding of packet data into structured Packet objects
         /// </summary>
         /// <param name="rawpacketData">The raw packet data (excluding termination byte) to decode.
-		///	Is supposed to be used with data from the PacketBuffer.
-		/// </param>
+        ///	Is supposed to be used with data from the PacketBuffer.
+        /// </param>
         public static Packet? GetPacketInformation(byte[] rawpacketData)
         {
             // 1. Decode COBS
