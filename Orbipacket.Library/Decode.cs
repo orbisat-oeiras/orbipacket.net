@@ -9,7 +9,6 @@ namespace Orbipacket
         private const int CONTROL_OFFSET = 2;
         private const int TIMESTAMP_OFFSET = 3;
         private const int PAYLOAD_OFFSET = 11;
-        public const int CRC_TERMINATION_BYTE_SIZE = 3; // 2 bytes for CRC, 1 0x00 termination byte
         public const byte _terminationByte = 0x00; // Termination byte
 
         /// <summary>
@@ -24,15 +23,10 @@ namespace Orbipacket
             byte[] packetData = [.. COBS.Decode(rawpacketData)];
             // Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
 
-            // 2. Compute CRC of packet data (without CRC bytes)
+            // Compute CRC of packet data (without CRC bytes)
             byte[] crc = Crc16.GetCRC(packetData[..^2]);
 
-            // 3. Extract CRC from packet
-            byte[] crcFromPacket = rawpacketData[^2..];
-
-            // Console.WriteLine("CRC from packet: " + BitConverter.ToString(crcFromPacket));
-            // Console.WriteLine("Computed CRC: " + BitConverter.ToString(crc));
-            if (!crc.SequenceEqual(crcFromPacket))
+            if (!(crc[0] == packetData[^2] && crc[1] == packetData[^1]))
             {
                 return null;
             }
@@ -51,16 +45,16 @@ namespace Orbipacket
                 );
             }
 
-            // 5. Analyze control byte
+            // Analyze control byte
             byte controlByte = packetData[CONTROL_OFFSET];
             byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 2-6) of control byte
             Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
 
-            // 6. Analyze timestamp
+            // Analyze timestamp
             byte[] timestampBytes = packetData[TIMESTAMP_OFFSET..][..8];
             ulong timestamp = BitConverter.ToUInt64(timestampBytes, 0);
 
-            // 7. Extract payload
+            // Extract payload
             byte[] payload = packetData[PAYLOAD_OFFSET..][..payloadLength];
 
             return new Packet(
