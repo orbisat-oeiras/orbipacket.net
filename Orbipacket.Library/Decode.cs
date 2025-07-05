@@ -19,7 +19,7 @@ namespace Orbipacket
         /// </param>
         public static Packet? GetPacketInformation(byte[] rawpacketData)
         {
-            // 1. Decode COBS
+            // Decode COBS
             byte[] packetData = [.. COBS.Decode(rawpacketData)];
             // Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
 
@@ -31,7 +31,7 @@ namespace Orbipacket
                 return null;
             }
 
-            // 4. Extract payload length from packet data and  validate it
+            // Extract payload length from packet data and  validate it
             int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
 
             if (!ValidatePacket(packetData, payloadLength))
