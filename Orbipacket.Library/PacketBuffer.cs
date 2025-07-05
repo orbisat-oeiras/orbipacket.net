@@ -33,17 +33,6 @@ namespace Orbipacket
                 if (_buffer[i] != Decode._terminationByte)
                     continue; // Start over if not termination byte
 
-                if (i > minPacketSize)
-                {
-                    // We can check if the packet before that termination byte is still valid
-                    byte[] previousPacket = [.. _buffer.GetRange(0, i)];
-                    if (IsCRCValid(previousPacket))
-                    {
-                        _buffer.RemoveRange(0, i);
-                        return previousPacket;
-                    }
-                }
-
                 int j = i + 1;
 
                 // Browse for the next termination byte
@@ -55,6 +44,17 @@ namespace Orbipacket
                 // No second termination byte found
                 if (j >= _buffer.Count)
                 {
+                    if (i > minPacketSize && i <= 254)
+                    {
+                        // We can check if the packet before that termination byte is still valid
+                        byte[] previousPacket = [.. _buffer.GetRange(0, i)];
+                        if (IsCRCValid(previousPacket))
+                        {
+                            _buffer.RemoveRange(0, i);
+                            return previousPacket;
+                        }
+                        return null;
+                    }
                     // Check if remaining data is a valid packet
                     byte[] packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i - 1)];
 
