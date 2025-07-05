@@ -173,7 +173,7 @@ namespace Orbipacket.Tests
         /// <returns>Encoded packet data, along with valid CRC bytes.</returns>
         /// <exception cref="ArgumentException"></exception>
 
-        private static byte[] CreatePacket(string device)
+        public static byte[] CreatePacket(string device)
         {
             byte control;
             byte[] payload;

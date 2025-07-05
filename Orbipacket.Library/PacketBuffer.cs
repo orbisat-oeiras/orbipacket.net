@@ -1,26 +1,22 @@
+using System.Collections.Generic;
 using Orbipacket.Library;
 
 namespace Orbipacket
 {
     public class PacketBuffer
     {
-        public Queue<byte> _buffer = new();
+        public List<byte> _buffer = [];
+        private const int minPacketSize = 13;
 
         public PacketBuffer()
         {
-            _buffer = new Queue<byte>();
+            _buffer = [];
         }
 
         /// <summary>
         /// Adds a byte array to the buffer.
         /// </summary>
-        public void Add(byte[] data)
-        {
-            foreach (var byteData in data)
-            {
-                _buffer.Enqueue(byteData);
-            }
-        }
+        public void Add(byte[] data) => _buffer.AddRange(data);
 
         /// <summary>
         /// Manipulates the buffer directly and
@@ -32,70 +28,44 @@ namespace Orbipacket
         /// </returns>
         public byte[]? ExtractFirstValidPacket()
         {
-            while (_buffer.Count >= 13)
+            for (int i = 0; i < _buffer.Count; i++)
             {
-                byte[] bufferArray = [.. _buffer];
+                if (_buffer[i] != Decode._terminationByte)
+                    continue; // Start over if not termination byte
 
-                // Find the first occurrence of the termination byte
-                int startIndex = Array.IndexOf(bufferArray, Decode._terminationByte);
+                int j = i + 1;
 
-                // TODO: Is it actually better to automatically clear the buffer?
-                // Or do we make it so the end user has to manually clear it?
-                // How would we deal with invalid packets?
-                // But yeah what we have works
-
-                if (startIndex == -1)
+                // Browse for the next termination byte
+                while (j < _buffer.Count && _buffer[j] != Decode._terminationByte)
                 {
-                    ClearBuffer(); // Clear invalid data
+                    j++;
+                }
+
+                // No second termination byte found
+                if (j >= _buffer.Count)
+                {
+                    // Check if remaining data is a valid packet
+                    byte[] packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i)];
+
+                    if (packetData.Length >= minPacketSize && IsCRCValid(packetData))
+                    {
+                        // Remove the packet from the buffer
+                        _buffer.RemoveRange(i, _buffer.Count - i);
+                        return packetData;
+                    }
                     return null;
                 }
 
-                // Find the next termination byte
-                int endIndex = Array.IndexOf(bufferArray, Decode._terminationByte, startIndex + 1);
+                byte[] completePacket = [.. _buffer.GetRange(i + 1, j - i - 1)]; // j - i is the length of the packet, - 1 to exclude the termination byte
 
-                // If no second termination byte found, packet is incomplete
-                if (endIndex == -1)
+                if (completePacket.Length >= minPacketSize && IsCRCValid(completePacket))
                 {
-                    // If no second termination byte is found, check if the remaining data forms a valid packet
-                    byte[] remainingData = bufferArray[(startIndex + 1)..];
-                    if (remainingData.Length >= 13 && IsCRCValid(remainingData))
-                    {
-                        ClearBuffer(); // Clear the buffer since the packet is complete
-                        return remainingData;
-                    }
-
-                    // Otherwise, keep everything from the first termination byte onwards
-                    _buffer = new Queue<byte>(bufferArray[startIndex..]);
-                    return null; // Wait for more data
+                    // Remove the packet from the buffer
+                    _buffer.RemoveRange(0, j);
+                    return completePacket;
                 }
-
-                // Extract packet data (everything up to but not including the termination byte)
-                byte[] packetData = bufferArray[(startIndex + 1)..endIndex];
-
-                // Update the buffer to keep data after the second termination byte
-                _buffer = new Queue<byte>(bufferArray[endIndex..]);
-
-                if (packetData.Length < 13 || !IsCRCValid(packetData))
-                {
-                    Console.WriteLine(
-                        "CRC check failed or packet is too short, discarding packet."
-                    );
-                    Console.WriteLine("Failed packet: " + BitConverter.ToString(packetData));
-                    continue;
-                }
-
-                return packetData;
             }
-
             return null;
-        }
-
-        /// <summary>
-        /// Clears the packet buffer.
-        /// </summary>
-        public void ClearBuffer()
-        {
-            _buffer.Clear();
         }
 
         /// <summary>
