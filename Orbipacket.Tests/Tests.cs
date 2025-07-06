@@ -173,7 +173,7 @@ namespace Orbipacket.Tests
         /// <returns>Encoded packet data, along with valid CRC bytes.</returns>
         /// <exception cref="ArgumentException"></exception>
 
-        private static byte[] CreatePacket(string device)
+        public static byte[] CreatePacket(string device)
         {
             byte control;
             byte[] payload;
@@ -218,8 +218,9 @@ namespace Orbipacket.Tests
             // Append CRC to the packet data
             packetData = [.. packetData, .. crc];
             byte[] encodedDataBeforeNoise = [.. COBS.Encode(packetData)];
+            byte[] dataWithTerminationByte = [.. encodedDataBeforeNoise, .. new byte[] { 0x00 }];
             Console.WriteLine(BitConverter.ToString(encodedDataBeforeNoise));
-            return encodedDataBeforeNoise;
+            return dataWithTerminationByte;
         }
 
         /// <summary>
@@ -236,13 +237,11 @@ namespace Orbipacket.Tests
             byte[] packet2 = CreatePacket("temperature");
             byte[] packet3 = CreatePacket("humidity");
 
-            buffer.Add([0x00]);
             buffer.Add(packet1);
-            buffer.Add([0x00]);
+
             buffer.Add(packet2);
-            buffer.Add([0x00]);
+
             buffer.Add(packet3);
-            buffer.Add([0x00]);
 
             // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
             byte[] extractedPacket;
@@ -277,15 +276,13 @@ namespace Orbipacket.Tests
             Console.WriteLine("Packet 1: " + BitConverter.ToString(packet1));
             Console.WriteLine("Packet 1 (uncomplete):" + BitConverter.ToString(uncompletePacket1));
 
-            buffer.Add([0x00]);
             buffer.Add(uncompletePacket1);
             buffer.Add([0x00]);
             buffer.Add(packet1);
-            buffer.Add([0x00]);
+
             buffer.Add(packet2);
-            buffer.Add([0x00]);
+
             buffer.Add(packet3);
-            buffer.Add([0x00]);
 
             // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
             byte[] extractedPacket;

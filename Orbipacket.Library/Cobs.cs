@@ -27,7 +27,7 @@ namespace Orbipacket.Library
         /// </summary>
         /// <param name="Input">An array up to 254 bytes in length</param>
         /// <returns>Returns the encoded input</returns>
-        public static IEnumerable<byte> Encode(IEnumerable<byte> Input)
+        public static IEnumerable<byte>? Encode(IEnumerable<byte> Input)
         {
             if (Input == null)
                 return null;
@@ -94,7 +94,7 @@ namespace Orbipacket.Library
         /// </summary>
         /// <param name="Input">A COBS encoded array</param>
         /// <returns>Returns the decoded input</returns>
-        public static IEnumerable<byte> Decode(IEnumerable<byte> Input)
+        public static IEnumerable<byte>? Decode(IEnumerable<byte> Input)
         {
             if (Input == null)
                 return null;
