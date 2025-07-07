@@ -17,13 +17,9 @@ byte[] packet1;
 byte[] packet2;
 byte[] packet3;
 
-buffer.Add([0x00]);
 buffer.Add(packet1);
-buffer.Add([0x00]);
 buffer.Add(packet2);
-buffer.Add([0x00]);
 buffer.Add(packet3);
-buffer.Add([0x00]);
 
 // Loop ExtractFirstValidPacket() until no more valid packets can be extracted
 byte[] extractedPacket;
