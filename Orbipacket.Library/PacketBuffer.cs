@@ -28,7 +28,9 @@ namespace Orbipacket
         /// </returns>
         public byte[]? ExtractFirstValidPacket()
         {
-            for (int i = 0; i < _buffer.Count; i++)
+            int bufferSize = _buffer.Count;
+
+            for (int i = 0; i < bufferSize; i++)
             {
                 if (_buffer[i] != Decode._terminationByte)
                     continue; // Start over if not termination byte
@@ -36,13 +38,13 @@ namespace Orbipacket
                 int j = i + 1;
 
                 // Browse for the next termination byte
-                while (j < _buffer.Count && _buffer[j] != Decode._terminationByte)
+                while (j < bufferSize && _buffer[j] != Decode._terminationByte)
                 {
                     j++;
                 }
 
                 // No second termination byte found
-                if (j >= _buffer.Count)
+                if (j >= bufferSize)
                 {
                     if (i > minPacketSize && i <= 254)
                     {
@@ -56,12 +58,12 @@ namespace Orbipacket
                         return null;
                     }
                     // Check if remaining data is a valid packet
-                    byte[] packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i - 1)];
+                    byte[] packetData = [.. _buffer.GetRange(i + 1, bufferSize - i - 1)];
 
                     if (packetData.Length >= minPacketSize && IsCRCValid(packetData))
                     {
                         // Remove the packet from the buffer
-                        _buffer.RemoveRange(i, _buffer.Count - i);
+                        _buffer.RemoveRange(i, bufferSize - i);
                         return packetData;
                     }
                     return null;
