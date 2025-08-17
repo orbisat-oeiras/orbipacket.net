@@ -51,9 +51,9 @@ namespace Orbipacket
             byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 3-7) of control byte
             
             // Witchcraft that happens here:
-            // We first right-shift the bytes to the left so 0b01111100 (TM packet, DevID 32) becomes
-            // 0b00011111 -> and here we can just use the bitwise AND to extract the first 5 bits
-            // 0b00011111 = 32
+            // We first right-shift the bits twice, so 0b01111100 (TM packet, DevID 32) becomes
+            // 0b00011111: and here we can just use the bitwise AND to extract the first 5 bits
+            // 0b00011111 = 32, efficiently extracting the deviceID.
             
             Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
 
