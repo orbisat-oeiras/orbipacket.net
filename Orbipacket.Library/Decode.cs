@@ -84,7 +84,7 @@ namespace Orbipacket
         /// </summary>
         /// <param name="packetData">The packet data to validate.</param>
         /// <param name="payloadLength">The expected length of the payload.</param>
-        /// <exception cref="ArgumentException">Thrown if the packet version or length is invalid.</exception>
+        /// <returns>Bool value indicating whether packet is valid or not.</returns>
         private static bool ValidatePacket(byte[] packetData, int payloadLength)
         {
             if (packetData[VERSION_OFFSET] != Packet.VERSION)
@@ -101,11 +101,11 @@ namespace Orbipacket
             return true;
         }
 
-        /// <summary>
-        /// Appends the termination byte to the packet data.
-        /// </summary>
-        /// <param name="packetData">The packet data to append the termination byte to.</param>
-        /// <returns>The packet data with the termination byte appended.</returns>
+        // /// <summary>
+        // /// Appends the termination byte to the packet data.
+        // /// </summary>
+        // /// <param name="packetData">The packet data to append the termination byte to.</param>
+        // /// <returns>The packet data with the termination byte appended.</returns>
         // private static byte[] AppendTerminationByte(byte[] packetData)
         // {
         //     return [.. packetData, _terminationByte];

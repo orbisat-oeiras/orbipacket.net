@@ -46,6 +46,7 @@ namespace Orbipacket
                 // No second termination byte found
                 if (j >= bufferSize)
                 {
+                    // CASE 1: Packet doesn't have initial 0x00 byte, only termination 0x00
                     if (i > minPacketSize && i <= 254)
                     {
                         // We can check if the packet before that termination byte is still valid
@@ -57,9 +58,14 @@ namespace Orbipacket
                         }
                         return null;
                     }
-                    // Check if remaining data is a valid packet
+                    
+                    // CASE 2: Packet has an initial 0x00 byte, but doesn't end with one
                     byte[] packetData = [.. _buffer.GetRange(i + 1, bufferSize - i - 1)];
-
+                    // index i + 1 because we're excluding the initial 0x00 byte,
+                    // starting at the version byte.
+                    // We then take (bufferSize - i - 1), which will be the size of the packet.
+                    
+                    
                     if (packetData.Length >= minPacketSize && IsCRCValid(packetData))
                     {
                         // Remove the packet from the buffer
