@@ -21,7 +21,5 @@ jobs:
     - run: dotnet restore Orbipacket.sln
     - run: dotnet build Orbipacket.Library/Orbipacket.Library.csproj --configuration Release
     - run: dotnet pack Orbipacket.Library/Orbipacket.Library.csproj --configuration Release --output ./nupkg
-    - run: dotnet nuget push ./nupkg/*.nupkg \
-           --api-key ${{ secrets.NUGET_API_KEY }} \
-           --source https://api.nuget.org/v3/index.json
+    - run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
     
