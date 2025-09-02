@@ -38,5 +38,7 @@ namespace Orbipacket
         {
             return (byte)(Overhead() + Length());
         }
+
+        public byte Version => 1;
     }
 }

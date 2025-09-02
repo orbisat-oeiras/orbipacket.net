@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Nito.HashAlgorithms;
 using Orbipacket.Library;
@@ -296,6 +297,31 @@ namespace Orbipacket.Tests
                         + $"Type: {packet.Type}"
                 );
             }
+        }
+
+        [TestMethod]
+        public void TestEncoding()
+        {
+            byte[] payloadValue = Encoding.ASCII.GetBytes("Hello, World!");
+            Payload payload = new(payloadValue);
+            Packet packet = new(
+                DeviceId.System,
+                (ulong)DateTime.UtcNow.Ticks * 100,
+                payload,
+                Packet.PacketType.TcPacket
+            );
+
+            byte[] encoded = Encode.EncodePacket(packet);
+
+            Console.WriteLine(BitConverter.ToString(encoded));
+
+            PacketBuffer buffer = new();
+            buffer.Add(encoded);
+            byte[] extractedPacket = buffer.ExtractFirstValidPacket();
+
+            Packet? decoded = Decode.GetPacketInformation(extractedPacket);
+
+            Console.WriteLine(Encoding.ASCII.GetString(decoded.Payload.Value));
         }
     }
 }

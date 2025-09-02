@@ -49,25 +49,26 @@ namespace Orbipacket
                     // CASE 1: Packet doesn't have initial 0x00 byte, only termination 0x00
                     if (i > minPacketSize && i <= 254)
                     {
+                        Console.WriteLine("Packet without initial 0x00 byte found");
                         // We can check if the packet before that termination byte is still valid
                         byte[] previousPacket = [.. _buffer.GetRange(0, i)];
-                        if (IsCRCValid(previousPacket))
-                        {
-                            _buffer.RemoveRange(0, i);
-                            return previousPacket;
-                        }
-                        return null;
+                        if (!IsCRCValid(previousPacket))
+                            return null;
+
+                        _buffer.RemoveRange(0, i);
+                        return previousPacket;
                     }
-                    
+
                     // CASE 2: Packet has an initial 0x00 byte, but doesn't end with one
                     byte[] packetData = [.. _buffer.GetRange(i + 1, bufferSize - i - 1)];
                     // index i + 1 because we're excluding the initial 0x00 byte,
                     // starting at the version byte.
                     // We then take (bufferSize - i - 1), which will be the size of the packet.
-                    
-                    
+
+
                     if (packetData.Length >= minPacketSize && IsCRCValid(packetData))
                     {
+                        Console.WriteLine("Packet with initial 0x00 byte found");
                         // Remove the packet from the buffer
                         _buffer.RemoveRange(i, bufferSize - i);
                         return packetData;
@@ -102,6 +103,13 @@ namespace Orbipacket
 
             // Extract CRC from packet
             byte[] crcFromPacket = decodedData[^2..];
+
+            // Console.WriteLine(
+            //     "Computed CRC: "
+            //         + BitConverter.ToString(crc)
+            //         + " CRC From Packet: "
+            //         + BitConverter.ToString(crcFromPacket)
+            // );
 
             // Check if computed CRC matches the one in the packet
             return crc.SequenceEqual(crcFromPacket);
