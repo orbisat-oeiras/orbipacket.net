@@ -135,3 +135,6 @@ _NCrunch*
 
 # Visual Studio Code directories
 .vscode/
+
+# JetBrains Rider directories
+.idea/
