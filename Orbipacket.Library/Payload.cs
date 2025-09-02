@@ -4,9 +4,9 @@ namespace Orbipacket
     {
         public byte[] Value { get; init; }
 
-        public Payload(byte[] payload)
+        public Payload(byte[] value)
         {
-            Value = payload;
+            Value = value;
         }
 
         public byte Length()
