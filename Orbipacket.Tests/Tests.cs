@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Nito.HashAlgorithms;
 using Orbipacket.Library;
 
 namespace Orbipacket.Tests
@@ -66,9 +66,16 @@ namespace Orbipacket.Tests
 
             Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
             byte[] encodedData = [.. COBS.Encode(packetData[..^1])];
-            var packet = Decode.GetPacketInformation(encodedData);
+
+            byte[] byteArray =
+                "04-01-0b-84-15-94-49-2a-e2-aa-61-18-48-65-6c-6c-6f-20-57-6f-72-6c-64-5b-1a"
+                    .Split('-')
+                    .Select(s => Convert.ToByte(s, 16))
+                    .ToArray();
+
+            var packet = Decode.GetPacketInformation(byteArray);
             Console.WriteLine(
-                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {packet.Payload}, Type: {packet.Type}"
+                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {Encoding.ASCII.GetString(packet.Payload.Value)}, Type: {packet.Type}"
             );
         }
 
@@ -181,17 +188,17 @@ namespace Orbipacket.Tests
             // Different device types for testing
             if (device == "pressure")
             {
-                control = 0b0_00000_00; // Control byte for pressure
+                control = 0b0_00010_00; // Control byte for pressure
                 payload = "100321.05"u8.ToArray(); // Example payload for pressure
             }
             else if (device == "temperature")
             {
-                control = 0b0_00001_00; // Control byte for temperature
+                control = 0b0_00011_00; // Control byte for temperature
                 payload = "21.32"u8.ToArray(); // Example payload for temperature
             }
             else if (device == "humidity")
             {
-                control = 0b0_00010_00; // Control byte for humidity
+                control = 0b0_00100_00; // Control byte for humidity
                 payload = "40.9202"u8.ToArray(); // Example payload for humidity
             }
             else
@@ -201,7 +208,7 @@ namespace Orbipacket.Tests
 
             // Fetch current timestamp in nanoseconds (since Unix epoch)
             ulong timestamp = (ulong)(
-                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1000000
+                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1_000_000
             );
             byte[] timestampBytes = BitConverter.GetBytes(timestamp);
 
@@ -306,7 +313,7 @@ namespace Orbipacket.Tests
             Payload payload = new(payloadValue);
             Packet packet = new(
                 DeviceId.System,
-                (ulong)DateTime.UtcNow.Ticks * 100,
+                (ulong)DateTime.UtcNow.Ticks * 100_000,
                 payload,
                 Packet.PacketType.TcPacket
             );
@@ -322,6 +329,75 @@ namespace Orbipacket.Tests
             Packet? decoded = Decode.GetPacketInformation(extractedPacket);
 
             Console.WriteLine(Encoding.ASCII.GetString(decoded.Payload.Value));
+        }
+
+        [TestMethod]
+        public void BruteForceTest()
+        {
+            Random random = new();
+            byte[] packetData = new byte[240];
+            random.NextBytes(packetData);
+            byte[] packet = Encode.EncodePacket(
+                new(
+                    DeviceId.System,
+                    (ulong)DateTime.UtcNow.Ticks * 100,
+                    new Payload(packetData),
+                    Packet.PacketType.TcPacket
+                )
+            );
+            PacketBuffer buffer = new();
+            Stopwatch sw = new();
+            sw.Start();
+            for (int i = 0; i < 1_000_000; i++)
+            {
+                buffer.Add(packet);
+            }
+            sw.Stop();
+            Console.WriteLine($"Time taken to add 100,000 packets: {sw.ElapsedMilliseconds} ms");
+            sw.Reset();
+
+            sw.Start();
+            Console.WriteLine("Starting extraction...");
+            byte[] extractedPacket;
+            int packetsAnalzyed = 0;
+            while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)
+            {
+                var decoded = Decode.GetPacketInformation(extractedPacket);
+                packetsAnalzyed++;
+            }
+            sw.Stop();
+            Console.WriteLine(
+                $"Time taken to extract {packetsAnalzyed} packets: {sw.Elapsed}, for a total of {packetsAnalzyed / sw.Elapsed.TotalSeconds} packets/second and a throughput of {(packetsAnalzyed * packet.Length / sw.Elapsed.TotalSeconds) / 1024} KBytes/s"
+            );
+        }
+
+        [TestMethod]
+        public void Noise()
+        {
+            Random random = new();
+            byte[] noise = new byte[500];
+            random.NextBytes(noise);
+            PacketBuffer buffer = new();
+            buffer.Add(noise);
+            byte[] packet = CreatePacket("pressure");
+            buffer.Add([0x00]);
+            buffer.Add(packet);
+            buffer.Add(packet);
+            buffer.Add(noise);
+            byte[] extractedPacket;
+            int packetsAnalzyed = 0;
+            while ((extractedPacket = buffer.ExtractFirstValidPacket()) != null)
+            {
+                var decoded = Decode.GetPacketInformation(extractedPacket);
+                Console.WriteLine(
+                    $"Decoded Packet: DeviceId: {decoded.DeviceId}, "
+                        + $"Timestamp: {decoded.Timestamp}, "
+                        + $"Payload: {decoded.Payload}, "
+                        + $"Type: {decoded.Type}"
+                );
+                packetsAnalzyed++;
+            }
+            Assert.IsTrue(packetsAnalzyed == 2);
         }
     }
 }
