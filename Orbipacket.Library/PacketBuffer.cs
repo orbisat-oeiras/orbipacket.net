@@ -7,6 +7,7 @@ namespace Orbipacket
     {
         public List<byte> _buffer = [];
         private const int minPacketSize = 13;
+        private int readPosition = 0;
 
         public PacketBuffer()
         {
@@ -16,7 +17,15 @@ namespace Orbipacket
         /// <summary>
         /// Adds a byte array to the buffer.
         /// </summary>
-        public void Add(byte[] data) => _buffer.AddRange(data);
+        public void Add(byte[] data)
+        {
+            if (readPosition > 0)
+            {
+                _buffer.RemoveRange(0, readPosition);
+                readPosition = 0;
+            }
+            _buffer.AddRange(data);
+        }
 
         /// <summary>
         /// Manipulates the buffer directly and
@@ -28,91 +37,78 @@ namespace Orbipacket
         /// </returns>
         public byte[]? ExtractFirstValidPacket()
         {
-            int bufferSize = _buffer.Count;
-
-            for (int i = 0; i < bufferSize; i++)
+            while (readPosition < _buffer.Count)
             {
-                if (_buffer[i] != Decode._terminationByte)
-                    continue; // Start over if not termination byte
+                // Find first 0x00 byte
+                int i = _buffer.IndexOf(0x00, readPosition);
 
-                int j = i + 1;
-
-                // Browse for the next termination byte
-                while (j < bufferSize && _buffer[j] != Decode._terminationByte)
+                // Check if everything before the first 0x00 byte is also a valid packet
+                if (i - readPosition >= minPacketSize)
                 {
-                    j++;
-                }
-
-                // No second termination byte found
-                if (j >= bufferSize)
-                {
-                    // CASE 1: Packet doesn't have initial 0x00 byte, only termination 0x00
-                    if (i > minPacketSize && i <= 254)
+                    byte[] packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
+                    packetData = Decode.DecodeCobsAndValidate(packetData);
+                    if (packetData != null)
                     {
-                        Console.WriteLine("Packet without initial 0x00 byte found");
-                        // We can check if the packet before that termination byte is still valid
-                        byte[] previousPacket = [.. _buffer.GetRange(0, i)];
-                        if (!IsCRCValid(previousPacket))
-                            return null;
-
-                        _buffer.RemoveRange(0, i);
-                        return previousPacket;
-                    }
-
-                    // CASE 2: Packet has an initial 0x00 byte, but doesn't end with one
-                    byte[] packetData = [.. _buffer.GetRange(i + 1, bufferSize - i - 1)];
-                    // index i + 1 because we're excluding the initial 0x00 byte,
-                    // starting at the version byte.
-                    // We then take (bufferSize - i - 1), which will be the size of the packet.
-
-
-                    if (packetData.Length >= minPacketSize && IsCRCValid(packetData))
-                    {
-                        Console.WriteLine("Packet with initial 0x00 byte found");
-                        // Remove the packet from the buffer
-                        _buffer.RemoveRange(i, bufferSize - i);
+                        Console.WriteLine("Packet without 0x00 byte found");
+                        readPosition = i; // Leave last 0x00 byte for next search
                         return packetData;
                     }
+                }
+                if (i == -1)
+                {
+                    // No 0x00 byte found
+                    readPosition = _buffer.Count;
                     return null;
                 }
-
-                byte[] completePacket = [.. _buffer.GetRange(i + 1, j - i - 1)]; // j - i is the length of the packet, - 1 to exclude the termination byte
-
-                if (completePacket.Length >= minPacketSize && IsCRCValid(completePacket))
+                // Find next 0x00 byte
+                int j = _buffer.IndexOf(0x00, i + 1);
+                if (j == -1)
                 {
-                    // Remove the packet from the buffer
-                    _buffer.RemoveRange(0, j);
-                    return completePacket;
+                    // No second 0x00 byte found: two cases
+
+                    // CASE 1: Everything after 0x00 is a valid packet
+                    if (_buffer.Count - i - 1 >= minPacketSize)
+                    {
+                        byte[] packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i - 1)];
+                        packetData = Decode.DecodeCobsAndValidate(packetData);
+                        if (packetData != null)
+                        {
+                            Console.WriteLine("Packet with initial 0x00 byte found");
+                            readPosition = _buffer.Count; // Move read position to the end
+                            return packetData;
+                        }
+                    }
+                    // CASE 2: Everything before 0x00 is a valid packet
+                    if (i - readPosition >= minPacketSize)
+                    {
+                        byte[] packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
+                        packetData = Decode.DecodeCobsAndValidate(packetData);
+                        if (packetData != null)
+                        {
+                            Console.WriteLine("Packet with trailing 0x00 byte found");
+                            readPosition = i; // Leave last 0x00 byte for next search
+                            return packetData;
+                        }
+                    }
+                    readPosition = _buffer.Count; // No valid packets found, wait for more data
+                    break;
                 }
+
+                // Both 0x00 bytes found, check if the data in between is a valid packet
+                if (j - i - 1 >= minPacketSize)
+                {
+                    byte[] completePacket = [.. _buffer.GetRange(i + 1, j - i - 1)];
+                    completePacket = Decode.DecodeCobsAndValidate(completePacket);
+                    if (completePacket != null)
+                    {
+                        readPosition = j;
+                        return completePacket;
+                    }
+                }
+                // No valid packets found, wait for more data
+                readPosition = i + 1; // Move past the first 0x00 byte
             }
             return null;
-        }
-
-        /// <summary>
-        /// Checks whether the CRC of the packet is valid or not
-        /// </summary>
-        public static bool IsCRCValid(byte[] packetData)
-        {
-            // Decode packet data using COBS
-            byte[] decodedData = [.. COBS.Decode(packetData)];
-            // Compute CRC of packet data (without CRC bytes)
-            if (decodedData.Length < 2)
-                return false; // Not enough data for CRC check
-
-            byte[] crc = Crc16.GetCRC(decodedData[..^2]);
-
-            // Extract CRC from packet
-            byte[] crcFromPacket = decodedData[^2..];
-
-            // Console.WriteLine(
-            //     "Computed CRC: "
-            //         + BitConverter.ToString(crc)
-            //         + " CRC From Packet: "
-            //         + BitConverter.ToString(crcFromPacket)
-            // );
-
-            // Check if computed CRC matches the one in the packet
-            return crc.SequenceEqual(crcFromPacket);
         }
     }
 }
