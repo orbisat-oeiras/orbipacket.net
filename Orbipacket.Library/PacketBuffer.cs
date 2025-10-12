@@ -110,5 +110,37 @@ namespace Orbipacket
             }
             return null;
         }
+
+        public void Clear()
+        {
+            _buffer.Clear();
+            readPosition = 0;
+        }
+
+        public int Length()
+        {
+            return _buffer.Count;
+        }
+
+        public void PrintBuffer()
+        {
+            Console.WriteLine(BitConverter.ToString([.. _buffer]).Replace("-", " "));
+        }
+
+        public byte[] GetBuffer()
+        {
+            return [.. _buffer];
+        }
+
+        public List<byte[]> GetAllPackets()
+        {
+            List<byte[]> packets = [];
+            byte[]? packet;
+            while ((packet = ExtractFirstValidPacket()) != null)
+            {
+                packets.Add(packet);
+            }
+            return packets;
+        }
     }
 }
