@@ -27,5 +27,11 @@ namespace Orbipacket.Library
 
             return result;
         }
+
+        public static bool IsCrcValid(byte[] packetData)
+        {
+            byte[] crc = GetCRC(packetData[..^2]);
+            return crc[0] == packetData[^2] && crc[1] == packetData[^1];
+        }
     }
 }

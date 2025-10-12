@@ -14,23 +14,11 @@ namespace Orbipacket
         /// <summary>
         /// Handles decoding of packet data into structured Packet objects
         /// </summary>
-        /// <param name="rawpacketData">The raw packet data (excluding termination byte) to decode.
+        /// <param name="packetData">The raw packet data (excluding termination byte) to decode.
         ///	Is supposed to be used with data from the PacketBuffer.
         /// </param>
-        public static Packet? GetPacketInformation(byte[] rawpacketData)
+        public static Packet? GetPacketInformation(byte[] packetData)
         {
-            // Decode COBS
-            byte[] packetData = [.. COBS.Decode(rawpacketData)];
-            // Console.WriteLine("Decoded packet data: " + BitConverter.ToString(packetData));
-
-            // Compute CRC of packet data (without CRC bytes)
-            byte[] crc = Crc16.GetCRC(packetData[..^2]);
-
-            if (!(crc[0] == packetData[^2] && crc[1] == packetData[^1]))
-            {
-                return null;
-            }
-
             // Extract payload length from packet data and  validate it
             int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
 
@@ -47,14 +35,14 @@ namespace Orbipacket
 
             // Analyze control byte
             byte controlByte = packetData[CONTROL_OFFSET];
-            
+
             byte deviceId = (byte)((controlByte >> 2) & 0b00011111); // Extract deviceId (bits 3-7) of control byte
-            
+
             // Witchcraft that happens here:
             // We first right-shift the bits twice, so 0b01111100 (TM packet, DevID 32) becomes
             // 0b00011111: and here we can just use the bitwise AND to extract the first 5 bits
             // 0b00011111 = 32, efficiently extracting the deviceID.
-            
+
             Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
 
             // Analyze timestamp
@@ -101,15 +89,39 @@ namespace Orbipacket
             return true;
         }
 
-        // /// <summary>
-        // /// Appends the termination byte to the packet data.
-        // /// </summary>
-        // /// <param name="packetData">The packet data to append the termination byte to.</param>
-        // /// <returns>The packet data with the termination byte appended.</returns>
-        // private static byte[] AppendTerminationByte(byte[] packetData)
-        // {
-        //     return [.. packetData, _terminationByte];
-        // }
-        // To be implemented, idk if this has any use (it's more of an encoding thing)
+        /// <summary>
+        /// Checks whether the CRC of the packet is valid or not
+        /// </summary>
+        public static byte[]? DecodeCobsAndValidate(byte[] packetData)
+        {
+            // Decode packet data using COBS
+            byte[] decodedData;
+            try
+            {
+                decodedData = [.. COBS.Decode(packetData)];
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Console.WriteLine("COBS decoding failed, invalid packet length.");
+                return null;
+            }
+            if (decodedData.Length >= 13 && Crc16.IsCrcValid(decodedData))
+            {
+                return decodedData;
+            }
+            else
+                return null;
+        }
     }
+
+    // /// <summary>
+    // /// Appends the termination byte to the packet data.
+    // /// </summary>
+    // /// <param name="packetData">The packet data to append the termination byte to.</param>
+    // /// <returns>The packet data with the termination byte appended.</returns>
+    // private static byte[] AppendTerminationByte(byte[] packetData)
+    // {
+    //     return [.. packetData, _terminationByte];
+    // }
+    // To be implemented, idk if this has any use (it's more of an encoding thing)
 }
