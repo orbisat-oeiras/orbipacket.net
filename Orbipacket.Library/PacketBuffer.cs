@@ -45,7 +45,7 @@ namespace Orbipacket
                 // Check if everything before the first 0x00 byte is also a valid packet
                 if (i - readPosition >= minPacketSize)
                 {
-                    byte[] packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
+                    byte[]? packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
                     packetData = Decode.DecodeCobsAndValidate(packetData);
                     if (packetData != null)
                     {
@@ -69,7 +69,7 @@ namespace Orbipacket
                     // CASE 1: Everything after 0x00 is a valid packet
                     if (_buffer.Count - i - 1 >= minPacketSize)
                     {
-                        byte[] packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i - 1)];
+                        byte[]? packetData = [.. _buffer.GetRange(i + 1, _buffer.Count - i - 1)];
                         packetData = Decode.DecodeCobsAndValidate(packetData);
                         if (packetData != null)
                         {
@@ -81,7 +81,7 @@ namespace Orbipacket
                     // CASE 2: Everything before 0x00 is a valid packet
                     if (i - readPosition >= minPacketSize)
                     {
-                        byte[] packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
+                        byte[]? packetData = [.. _buffer.GetRange(readPosition, i - readPosition)];
                         packetData = Decode.DecodeCobsAndValidate(packetData);
                         if (packetData != null)
                         {
@@ -97,7 +97,7 @@ namespace Orbipacket
                 // Both 0x00 bytes found, check if the data in between is a valid packet
                 if (j - i - 1 >= minPacketSize)
                 {
-                    byte[] completePacket = [.. _buffer.GetRange(i + 1, j - i - 1)];
+                    byte[]? completePacket = [.. _buffer.GetRange(i + 1, j - i - 1)];
                     completePacket = Decode.DecodeCobsAndValidate(completePacket);
                     if (completePacket != null)
                     {
