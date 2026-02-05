@@ -25,8 +25,21 @@ namespace Orbipacket.Library
 
             // Console.WriteLine("Control byte: " + Convert.ToString(controlByte, 2).PadLeft(8, '0'));
 
+            ulong timestamp = packet.Timestamp;
+
             // Timestamp Bytes
-            byte[] timestampBytes = BitConverter.GetBytes(packet.Timestamp);
+            byte[] timestampBytes = new byte[5];
+
+            if (packet.Timestamp > 0xFF_FF_FF_FF_FF)
+            {
+                throw new Exception("Packet timestamp overflow.");
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                timestampBytes[i] = (byte)(timestamp & 0xFF);
+                timestamp >>= 8;
+            }
 
             // Payload bytes
             // How the payload value should be converted to a byte array is up to the end user.

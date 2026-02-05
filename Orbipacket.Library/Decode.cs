@@ -8,7 +8,8 @@ namespace Orbipacket
         private const int LENGTH_OFFSET = 1;
         private const int CONTROL_OFFSET = 2;
         private const int TIMESTAMP_OFFSET = 3;
-        private const int PAYLOAD_OFFSET = 11;
+        private const int TIMESTAMP_SIZE = 5;
+        private const int PAYLOAD_OFFSET = TIMESTAMP_OFFSET + TIMESTAMP_SIZE;
         public const byte _terminationByte = 0x00; // Termination byte
 
         /// <summary>
@@ -22,7 +23,11 @@ namespace Orbipacket
             // Extract payload length from packet data and  validate it
             int payloadLength = packetData.Length - PAYLOAD_OFFSET - 2; // Subtract 2 for CRC
 
-            if (!ValidatePacket(packetData, payloadLength))
+            // Analyze timestamp earlier than the rest to make sure it's 5 bytes long
+            byte[] timestampBytes = packetData[TIMESTAMP_OFFSET..][..TIMESTAMP_SIZE];
+            ulong? timestamp = ReadUInt40(timestampBytes);
+
+            if (!ValidatePacket(packetData, payloadLength) || timestamp == null)
             {
                 Console.WriteLine("Invalid packet, discarding...");
                 return new Packet(
@@ -45,16 +50,12 @@ namespace Orbipacket
 
             Packet.PacketType type = GetPacketType(controlByte); // Determine packet type
 
-            // Analyze timestamp
-            byte[] timestampBytes = packetData[TIMESTAMP_OFFSET..][..8];
-            ulong timestamp = BitConverter.ToUInt64(timestampBytes, 0);
-
             // Extract payload
             byte[] payload = packetData[PAYLOAD_OFFSET..][..payloadLength];
 
             return new Packet(
                 deviceId: (DeviceId)deviceId,
-                timestamp: timestamp,
+                timestamp: (ulong)timestamp,
                 payload: new Payload(payload),
                 type: type
             );
@@ -111,6 +112,21 @@ namespace Orbipacket
             }
             else
                 return null;
+        }
+
+        private static ulong? ReadUInt40(byte[] bytes)
+        {
+            if (bytes.Length < TIMESTAMP_SIZE)
+            {
+                Console.WriteLine("Timestamp size incorrect.");
+                return null;
+            }
+            ulong value = 0;
+            for (int i = 0; i < 5; i++)
+            {
+                value |= ((ulong)bytes[i]) << (8 * i);
+            }
+            return value;
         }
     }
 

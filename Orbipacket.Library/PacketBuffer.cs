@@ -6,7 +6,7 @@ namespace Orbipacket
     public class PacketBuffer
     {
         public List<byte> _buffer = [];
-        private const int minPacketSize = 13;
+        private const int minPacketSize = 10;
         private int readPosition = 0;
 
         public PacketBuffer()

@@ -12,77 +12,9 @@ namespace Orbipacket.Tests
         private readonly byte[] NOISE_DATA = [0xA1, 0xA2, 0xA3, 0xA4, 0xA5];
 
         /// <summary>
-        /// Tests sending just one full packet, with valid CRC and termination bytes.
-        /// </summary>
-        /// <param name="device"></param>
-        /// <exception cref="ArgumentException"></exception>
-        [TestMethod]
-        [DataRow("pressure")]
-        [DataRow("temperature")]
-        [DataRow("humidity")]
-        public void TestPacket(string device)
-        {
-            byte control;
-            byte[] payload;
-
-            if (device == "pressure")
-            {
-                control = 0b0_00000_00; // Control byte for pressure
-                payload = "100321.05"u8.ToArray(); // Example payload for pressure
-            }
-            else if (device == "temperature")
-            {
-                control = 0b0_00001_00; // Control byte for temperature
-                payload = "21.32"u8.ToArray(); // Example payload for temperature
-            }
-            else if (device == "humidity")
-            {
-                control = 0b0_00010_00; // Control byte for humidity
-                payload = "40.9202"u8.ToArray(); // Example payload for humidity
-            }
-            else
-            {
-                throw new ArgumentException("Invalid device type");
-            }
-
-            ulong timestamp = (ulong)(
-                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1000000
-            );
-
-            byte[] timestampBytes = BitConverter.GetBytes(timestamp);
-
-            byte[] packetData =
-            [
-                0x01,
-                (byte)payload.Length,
-                control,
-                .. timestampBytes,
-                .. payload,
-            ];
-            // Calculate CRC
-            byte[] crc = Crc16.GetCRC(packetData);
-            // Append CRC and termination byte to the packet data
-            packetData = [.. packetData, .. crc, .. new byte[] { 0x00 }];
-
-            Console.WriteLine($"Packet data: {BitConverter.ToString(packetData)}");
-            byte[] encodedData = [.. COBS.Encode(packetData[..^1])];
-
-            byte[] byteArray =
-                "04-01-0b-84-15-94-49-2a-e2-aa-61-18-48-65-6c-6c-6f-20-57-6f-72-6c-64-5b-1a"
-                    .Split('-')
-                    .Select(s => Convert.ToByte(s, 16))
-                    .ToArray();
-
-            var packet = Decode.GetPacketInformation(byteArray);
-            Console.WriteLine(
-                $"Decoded Packet: DeviceId: {packet.DeviceId}, Timestamp: {packet.Timestamp}, Payload: {Encoding.ASCII.GetString(packet.Payload.Value)}, Type: {packet.Type}"
-            );
-        }
-
-        /// <summary>
         /// Test sending a packet with noise data.
         /// This proves that the implementation is
-        /// able to distinguish between real data and uncomplete packets.
+        /// able to distinguish between real data and incomplete packets.
         /// </summary>
         /// <param name="device">Device type. Can either be pressure, temperature or humidity.</param>
         /// <exception cref="ArgumentException"></exception>
@@ -93,60 +25,13 @@ namespace Orbipacket.Tests
         [DataRow("humidity")]
         public void TestPacketWithNoise(string device)
         {
-            byte control;
-            byte[] payload;
-            // Different device types for testing
-            if (device == "pressure")
-            {
-                control = 0b0_00000_00; // Control byte for pressure
-                payload = "100321.05"u8.ToArray(); // Example payload for pressure
-            }
-            else if (device == "temperature")
-            {
-                control = 0b0_00001_00; // Control byte for temperature
-                payload = "21.32"u8.ToArray(); // Example payload for temperature
-            }
-            else if (device == "humidity")
-            {
-                control = 0b0_00010_00; // Control byte for humidity
-                payload = "40.9202"u8.ToArray(); // Example payload for humidity
-            }
-            else
-            {
-                throw new ArgumentException("Invalid device type");
-            }
+            PacketBuffer buffer = new();
 
-            // Fetch current timestamp in nanoseconds (since Unix epoch)
-            ulong timestamp = (ulong)(
-                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1000000
-            );
-            byte[] timestampBytes = BitConverter.GetBytes(timestamp);
-
-            // Create a new packet buffer
-            var buffer = new PacketBuffer();
-
-            // Create a packet with the specified device type and payload
-            byte[] packetData =
-            [
-                0x01,
-                (byte)payload.Length,
-                control,
-                .. timestampBytes,
-                .. payload,
-            ];
-            // Calculate CRC
-            byte[] crc = Crc16.GetCRC(packetData);
-            // Append CRC to the packet data
-            packetData = [.. packetData, .. crc];
-            // Encode the data with COBS (because otherwise we'd catch a 0x00 byte in the middle of the packet)
-            byte[] encodedDataBeforeNoise = [.. COBS.Encode(packetData)];
-
-            // Add noise to the encoded data
             byte[] noisyData =
             [
                 .. NOISE_DATA,
                 .. new byte[] { 0x00 },
-                .. encodedDataBeforeNoise,
+                .. CreatePacket(device),
                 .. new byte[] { 0x00 },
             ];
             buffer.Add(noisyData);
@@ -206,11 +91,22 @@ namespace Orbipacket.Tests
                 throw new ArgumentException("Invalid device type");
             }
 
-            // Fetch current timestamp in nanoseconds (since Unix epoch)
+            // Fetch current timestamp in microseconds (since midnight 10 days ago)
             ulong timestamp = (ulong)(
-                (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds * 1_000_000
+                (DateTime.UtcNow - DateTime.UtcNow.Date.AddDays(-5)).TotalMilliseconds * 1_000
             );
-            byte[] timestampBytes = BitConverter.GetBytes(timestamp);
+
+            byte[] timestampBytes = new byte[5];
+
+            for (int i = 0; i < 5; i++)
+            {
+                timestampBytes[i] = (byte)(timestamp & 0xFF);
+                timestamp >>= 8;
+            }
+
+            Console.WriteLine(
+                "Timestamp: " + timestamp + " bytes: " + BitConverter.ToString(timestampBytes)
+            );
 
             // Create a packet with the specified device type and payload
             byte[] packetData =
@@ -266,11 +162,11 @@ namespace Orbipacket.Tests
         }
 
         /// <summary>
-        /// Handles packets, with embedded uncomplete packets along the way.
+        /// Handles packets, with embedded incomplete packets along the way.
         /// Proves that the implementation is able to handle more than one packet coming in a byte array.
         /// </summary>
         [TestMethod]
-        public void TestUncompletePacket()
+        public void TestIncompletePacket()
         {
             PacketBuffer buffer = new();
 
@@ -279,12 +175,12 @@ namespace Orbipacket.Tests
             byte[] packet2 = CreatePacket("temperature");
             byte[] packet3 = CreatePacket("humidity");
 
-            byte[] uncompletePacket1 = [.. packet1[..^10]]; // Simulate an uncomplete packet
+            byte[] incompletePacket1 = [.. packet1[..^10]]; // Simulate an incomplete packet
 
             Console.WriteLine("Packet 1: " + BitConverter.ToString(packet1));
-            Console.WriteLine("Packet 1 (uncomplete):" + BitConverter.ToString(uncompletePacket1));
+            Console.WriteLine("Packet 1 (incomplete):" + BitConverter.ToString(incompletePacket1));
 
-            buffer.Add(uncompletePacket1);
+            buffer.Add(incompletePacket1);
             buffer.Add([0x00]);
             buffer.Add(packet1);
 
@@ -311,9 +207,12 @@ namespace Orbipacket.Tests
         {
             byte[] payloadValue = Encoding.ASCII.GetBytes("Hello, World!");
             Payload payload = new(payloadValue);
+
             Packet packet = new(
                 DeviceId.System,
-                (ulong)DateTime.UtcNow.Ticks * 100_000,
+                (ulong)(
+                    (DateTime.UtcNow - DateTime.UtcNow.Date.AddDays(-5)).TotalMilliseconds * 1_000
+                ),
                 payload,
                 Packet.PacketType.TcPacket
             );
@@ -340,7 +239,10 @@ namespace Orbipacket.Tests
             byte[] packet = Encode.EncodePacket(
                 new(
                     DeviceId.System,
-                    (ulong)DateTime.UtcNow.Ticks * 100,
+                    (ulong)(
+                        (DateTime.UtcNow - DateTime.UtcNow.Date.AddDays(-5)).TotalMilliseconds
+                        * 1_000
+                    ),
                     new Payload(packetData),
                     Packet.PacketType.TcPacket
                 )
