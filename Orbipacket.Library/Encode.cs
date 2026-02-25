@@ -62,7 +62,7 @@ namespace Orbipacket.Library
 
             byte[] encodedPacket = [.. COBS.Encode(completePacket), _terminationByte];
 
-            Console.WriteLine("Encoded packet:" + BitConverter.ToString(encodedPacket));
+            // Console.WriteLine("Encoded packet:" + BitConverter.ToString(encodedPacket));
             return encodedPacket;
         }
     }

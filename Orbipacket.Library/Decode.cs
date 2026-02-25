@@ -84,7 +84,12 @@ namespace Orbipacket
 
             if (payloadLength != packetData[LENGTH_OFFSET])
             {
-                Console.WriteLine("Payload length mismatch.");
+                Console.WriteLine(
+                    "Payload length mismatch, expected "
+                        + packetData[LENGTH_OFFSET]
+                        + " got "
+                        + payloadLength
+                );
                 return false;
             }
             return true;
