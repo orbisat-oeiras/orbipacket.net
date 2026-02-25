@@ -32,7 +32,7 @@ namespace Orbipacket.Library
 
             if (packet.Timestamp > 0xFF_FF_FF_FF_FF)
             {
-                throw new Exception("Packet timestamp overflow.");
+                throw new OverflowException("Packet timestamp overflow.");
             }
 
             for (int i = 0; i < 5; i++)
