@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<PackageId>OrbiPacket</PackageId>
-		<Version>1.5.3</Version>
+		<Version>1.6.0</Version>
 		<Authors>Orbisat-Oeiras</Authors>
 		<Description>C# Implementation of the OrbiPacket protocol.</Description>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
