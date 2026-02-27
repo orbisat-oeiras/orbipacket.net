@@ -18,5 +18,6 @@ namespace Orbipacket
         Mission2 = 13,
         Mission3 = 14,
         Mission4 = 15,
+        Unknown = 31,
     }
 }
